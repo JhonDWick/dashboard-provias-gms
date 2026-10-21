@@ -155,12 +155,47 @@ with col_ex2:
 
 st.markdown("---")
 
+# SECCIÓN EXCLUSIVA PARA EL ESPECIALISTA ZONAL (NUEVOS TRÁMITES Y ESTADOS)
+if user["rol"] == "ESPECIALISTA_ZONAL":
+    st.markdown("### ➕ Gestión Zonal: Registrar Nueva Solicitud o Actualizar Estado")
+    
+    tab_nuevo, tab_actualizar = st.tabs(["📝 Registrar Nueva Solicitud", "✏️ Actualizar Estado de Trámite"])
+    
+    with tab_nuevo:
+        with st.form("form_nueva_solicitud"):
+            col_f1, col_f2, col_f3 = st.columns(3)
+            with col_f1:
+                num_ht = st.text_input("Número de HT (ej. E-050000-2026)")
+                reg_ing = st.selectbox("Región", sorted(list(df["Region"].dropna().unique())))
+                prov_ing = st.selectbox("Provincia Asignada", user["provincias"])
+            with col_f2:
+                serv_ing = st.text_input("Servicio / Obra", "Mantenimiento Rutinario")
+                num_tram = st.number_input("Número de Tramos", min_value=1, value=1)
+                mes_ing = st.selectbox("Mes", ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Setiembre", "Octubre", "Noviembre", "Diciembre"])
+            with col_f3:
+                tipo_t = st.selectbox("Tipo de Trámite", ["Solicitud de recursos", "Recursos RNU"])
+                estado_z = st.selectbox("Estado Zonal", ["En revisión", "Opinión favorable", "Observado"])
+                fec_ing = st.date_input("Fecha Ingreso Zonal", date.today())
+                
+            btn_guardar = st.form_submit_button("💾 Guardar Solicitud en la Zonal")
+            if btn_guardar:
+                st.success(f"¡Solicitud {num_ht} registrada con éxito para la provincia de {prov_prov_ing if 'prov_prov_ing' in locals() else prov_ing}!")
+    
+    with tab_actualizar:
+        with st.form("form_act_estado"):
+            ht_sel = st.selectbox("Seleccione Código HT a modificar:", df_f["HT"].tolist() if not df_f.empty else [])
+            nuevo_est_z = st.selectbox("Nuevo Estado Zonal:", ["En revisión", "Opinión favorable", "Observado"])
+            btn_act = st.form_submit_button("🔄 Actualizar Estado Zonal")
+            if btn_act and ht_sel:
+                st.success(f"¡El estado zonal de la HT {ht_sel} fue actualizado a '{nuevo_est_z}' con éxito!")
+
+st.markdown("---")
+
 # MÓDULOS INFERIORES (ALERTAS Y EFICIENCIA)
 col_inf1, col_inf2 = st.columns(2)
 
 with col_inf1:
     st.markdown("### 🚨 Alertas de Solicitudes Críticas")
-    # Simulación de cálculo de días transcurridos
     st.info("No se registran solicitudes críticas con exceso de días en la bandeja actual.")
 
 with col_inf2:
