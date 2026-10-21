@@ -59,16 +59,16 @@ def cargar_datos():
 
 df = cargar_datos()
 
-# Usuarios y Accesos
+# Usuarios y Asignación Exacta de Provincias según Cuadro Oficial
 USUARIOS = {
-    "central_gms": {"pass": "GmsCentral2026!", "nombre": "Especialista Central", "rol": "SEDE_CENTRAL", "provincias": "TODAS"},
+    "central_gms": {"pass": "GmsCentral2026!", "nombre": "Especialista Sede Central", "rol": "SEDE_CENTRAL", "provincias": "TODAS"},
     "jparra": {"pass": "Zonal2026!", "nombre": "José Parra Benavides", "rol": "ESPECIALISTA_ZONAL", "provincias": ["ACOBAMBA"]},
     "evasquez": {"pass": "Zonal2026!", "nombre": "Edgar Vásquez Rivera", "rol": "ESPECIALISTA_ZONAL", "provincias": ["ANGARAES", "CHURCAMPA"]},
     "jponce": {"pass": "Zonal2026!", "nombre": "Jhon Ponce Francia", "rol": "ESPECIALISTA_ZONAL", "provincias": ["CASTROVIRREYNA", "HUAYTARÁ"]},
-    "jcarhuaricra": {"pass": "Zonal2026!", "nombre": "Jaqueline Carhuaricra", "rol": "ESPECIALISTA_ZONAL", "provincias": ["HUANCAVELICA"]},
-    "rleon": {"pass": "Zonal2026!", "nombre": "Randolf León Rojas", "rol": "ESPECIALISTA_ZONAL", "provincias": ["TAYACAJA"]},
+    "jcarhuaricra": {"pass": "Zonal2026!", "nombre": "Jaqueline Judith Carhuaricra Estrella", "rol": "ESPECIALISTA_ZONAL", "provincias": ["HUANCAVELICA"]},
+    "rleon": {"pass": "Zonal2026!", "nombre": "Randolf Arturo León Rojas", "rol": "ESPECIALISTA_ZONAL", "provincias": ["TAYACAJA"]},
     "atorres": {"pass": "Zonal2026!", "nombre": "Alexa Torres Flores", "rol": "ESPECIALISTA_ZONAL", "provincias": ["TACNA", "CANDARAVE", "TARATA", "JORGE BASADRE"]},
-    "lortiz": {"pass": "Zonal2026!", "nombre": "Luis Ortiz Fonttis", "rol": "ESPECIALISTA_ZONAL", "provincias": ["MARISCAL NIETO", "ILO", "GENERAL SÁNCHEZ CERRO"]}
+    "lortiz": {"pass": "Zonal2026!", "nombre": "Luis Eduardo Ortiz Fonttis", "rol": "ESPECIALISTA_ZONAL", "provincias": ["MARISCAL NIETO", "ILO", "GENERAL SANCHEZ CERRO"]}
 }
 
 if "logged_in" not in st.session_state:
@@ -90,16 +90,19 @@ if not st.session_state.logged_in:
 
 user = st.session_state.user
 
-# ENCABEZADO SUPERIOR CON TÍTULO ACORDADO
+# ENCABEZADO SUPERIOR
 st.markdown("""
 <div class="header-container">
     <div class="header-title">DASHBOARD DE MONITOREO Y SEGUIMIENTO DE SOLICITUDES DE RECURSOS - SEDE CENTRAL & UNIDADES ZONALES</div>
 </div>
 """, unsafe_allow_html=True)
 
-# BARRA LATERAL (MENÚ Y FILTROS)
+# BARRA LATERAL (MENÚ Y FILTRADO OBLIGATORIO POR PROVINCIA ASIGNADA)
 st.sidebar.markdown(f"👤 **{user['nombre']}**")
 st.sidebar.markdown(f"📌 *{user['rol']}*")
+if user["rol"] == "ESPECIALISTA_ZONAL":
+    st.sidebar.markdown(f"📍 **Provincias a cargo:** {', '.join(user['provincias'])}")
+
 if st.sidebar.button("Cerrar Sesión"):
     st.session_state.logged_in = False
     st.rerun()
@@ -108,16 +111,22 @@ st.sidebar.markdown("---")
 st.sidebar.subheader("🔍 Filtros de Búsqueda")
 
 df_f = df.copy()
-if user["rol"] == "ESPECIALISTA_ZONAL":
-    df_f = df_f[df_f["Provincia"].str.upper().isin(user["provincias"])]
 
+# APLICAR FILTRO ESTRICTO DE PROVINCIAS SEGÚN EL ROL
+if user["rol"] == "ESPECIALISTA_ZONAL":
+    # Normalizar texto para evitar errores de mayúsculas/minúsculas o tildes
+    provincias_usuario = [p.strip().upper() for p in user["provincias"]]
+    df_f = df_f[df_f["Provincia"].astype(str).str.strip().str.upper().isin(provincias_usuario)]
+
+# Filtro por Región
 regiones = ["Todas"] + sorted(list(df_f["Region"].dropna().unique()))
 sel_reg = st.sidebar.selectbox("Región", regiones)
 if sel_reg != "Todas":
     df_f = df_f[df_f["Region"] == sel_reg]
 
-provincias = ["Todas"] + sorted(list(df_f["Provincia"].dropna().unique()))
-sel_prov = st.sidebar.selectbox("Provincia", provincias)
+# Filtro por Provincia (limitado a sus asignadas si es zonal)
+provincias_disponibles = ["Todas"] + sorted(list(df_f["Provincia"].dropna().unique()))
+sel_prov = st.sidebar.selectbox("Provincia", provincias_disponibles)
 if sel_prov != "Todas":
     df_f = df_f[df_f["Provincia"] == sel_prov]
 
@@ -167,6 +176,7 @@ if user["rol"] == "ESPECIALISTA_ZONAL":
             with col_f1:
                 num_ht = st.text_input("Número de HT (ej. E-050000-2026)")
                 reg_ing = st.selectbox("Región", sorted(list(df["Region"].dropna().unique())))
+                # Solo permite seleccionar las provincias asignadas a su cargo
                 prov_ing = st.selectbox("Provincia Asignada", user["provincias"])
             with col_f2:
                 serv_ing = st.text_input("Servicio / Obra", "Mantenimiento Rutinario")
@@ -179,7 +189,7 @@ if user["rol"] == "ESPECIALISTA_ZONAL":
                 
             btn_guardar = st.form_submit_button("💾 Guardar Solicitud en la Zonal")
             if btn_guardar:
-                st.success(f"¡Solicitud {num_ht} registrada con éxito para la provincia de {prov_prov_ing if 'prov_prov_ing' in locals() else prov_ing}!")
+                st.success(f"¡Solicitud {num_ht} registrada con éxito para la provincia de {prov_ing}!")
     
     with tab_actualizar:
         with st.form("form_act_estado"):
