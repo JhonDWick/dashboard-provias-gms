@@ -95,7 +95,7 @@ if st.sidebar.button("Cerrar Sesión"):
     st.session_state.logged_in = False
     st.rerun()
 
-st.sidebar.hr()
+st.sidebar.markdown("---")  # <--- Corregido aquí
 st.sidebar.header("🔍 Filtros de Búsqueda")
 
 # Filtrar según rol de usuario
@@ -180,4 +180,4 @@ if user["rol"] == "ESPECIALISTA_ZONAL":
 
         btn_guardar = st.form_submit_button("💾 Guardar Solicitud")
         if btn_guardar:
-            st.success(f"La solicitud {num_ht} fue registrada para la provincia de {provincia_ingreso}. (Sincronización lista)")
+            st.success(f"La solicitud {num_ht} fue registrada para la provincia de {provincia_ingreso}.")
