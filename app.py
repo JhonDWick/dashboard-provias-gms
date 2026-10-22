@@ -135,7 +135,7 @@ if not st.session_state.logged_in:
         </div>
     """, unsafe_allow_html=True)
 
-    st.markdown("### 🌐 Plataforma de Monitoreo y Gestión de Solicitudes de Recursos Viales")
+    st.markdown("### 🌐 Plataforma de Monitoreo y Gestión de Solicitudes de Recursos Financieros")
     st.write("Sistema informático orientado al seguimiento, control de estados y tramitación de recursos para el mantenimiento rutinario de caminos vecinales a nivel nacional.")
     
     st.markdown("<br>", unsafe_allow_html=True)
