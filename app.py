@@ -10,9 +10,19 @@ st.set_page_config(
     layout="wide"
 )
 
-# Estilos CSS Profesionales e Institucionales (Tarjetas KPI Uniformes)
+# Estilos CSS Profesionales e Institucionales (Fondo vial en barra lateral y tarjetas uniformes)
 st.markdown("""
     <style>
+    /* Fondo de infraestructura vial en la barra lateral con capa institucional */
+    [data-testid="stSidebar"] {
+        background-image: linear-gradient(rgba(11, 79, 138, 0.90), rgba(11, 79, 138, 0.90)), url("https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?q=80&w=1000&auto=format&fit=crop");
+        background-size: cover;
+        background-position: center;
+        color: white;
+    }
+    [data-testid="stSidebar"] h1, [data-testid="stSidebar"] h2, [data-testid="stSidebar"] h3, [data-testid="stSidebar"] label, [data-testid="stSidebar"] p, [data-testid="stSidebar"] span {
+        color: white !important;
+    }
     .header-container {
         background-color: #0b4f8a;
         padding: 12px 20px;
@@ -60,6 +70,15 @@ st.markdown("""
         font-weight: bold; 
         margin: 0;
     }
+    .welcome-card {
+        background-color: #f8f9fa;
+        border: 1px solid #e0e0e0;
+        border-top: 4px solid #0b4f8a;
+        padding: 20px;
+        border-radius: 8px;
+        text-align: center;
+        height: 100%;
+    }
     </style>
 """, unsafe_allow_html=True)
 
@@ -93,8 +112,11 @@ if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
     st.session_state.user = None
 
+# BARRA LATERAL CON CREDENCIALES DE ACCESO
+st.sidebar.title("🔐 Acceso al Sistema")
+st.sidebar.markdown("---")
+
 if not st.session_state.logged_in:
-    st.sidebar.title("🔐 Acceso - Provías Descentralizado")
     usr = st.sidebar.text_input("Usuario")
     pwd = st.sidebar.text_input("Contraseña", type="password")
     if st.sidebar.button("Iniciar Sesión"):
@@ -103,19 +125,58 @@ if not st.session_state.logged_in:
             st.session_state.user = USUARIOS[usr]
             st.rerun()
         else:
-            st.sidebar.error("Credenciales incorrectas.")
+            st.sidebar.error("Usuario o contraseña incorrectos.")
+    
+    # PANTALLA DE BIENVENIDA INSTITUCIONAL EN EL ÁREA PRINCIPAL (RECUADRO ROJO)
+    st.markdown("""
+        <div style="background-color: #0b4f8a; padding: 25px; border-radius: 8px; color: white; text-align: center; margin-bottom: 25px;">
+            <h1 style="color: white; margin: 0; font-size: 26px;">MINISTERIO DE TRANSPORTES Y COMUNICACIONES</h1>
+            <h3 style="color: #e0e0e0; margin-top: 8px; font-weight: normal; font-size: 18px;">PROVÍAS DESCENTRALIZADO — GERENCIA DE MONITOREO Y SEGUIMIENTO (GMS)</h3>
+        </div>
+    """, unsafe_allow_html=True)
+
+    st.markdown("### 🌐 Plataforma de Monitoreo y Gestión de Solicitudes de Recursos Viales")
+    st.write("Sistema informático orientado al seguimiento, control de estados y tramitación de recursos para el mantenimiento rutinario de caminos vecinales a nivel nacional.")
+    
+    st.markdown("<br>", unsafe_allow_html=True)
+    
+    col_w1, col_w2, col_w3 = st.columns(3)
+    with col_w1:
+        st.markdown("""
+            <div class="welcome-card">
+                <h4>🛣️ Cobertura Zonal</h4>
+                <p style="font-size: 13px; color: #555;">Supervisión descentralizada en las jurisdicciones viales de las regiones de <b>Tacna, Moquegua y Huancavelica</b>.</p>
+            </div>
+        """, unsafe_allow_html=True)
+    with col_w2:
+        st.markdown("""
+            <div class="welcome-card">
+                <h4>📊 Trazabilidad en Línea</h4>
+                <p style="font-size: 13px; color: #555;">Control automatizado de Hojas de Trámite (HT), opiniones favorables y validaciones centrales en tiempo real.</p>
+            </div>
+        """, unsafe_allow_html=True)
+    with col_w3:
+        st.markdown("""
+            <div class="welcome-card">
+                <h4>👥 Acceso por Roles</h4>
+                <p style="font-size: 13px; color: #555;">Perfiles diferenciados y seguros para Especialistas de Unidades Zonales y Especialistas de Sede Central.</p>
+            </div>
+        """, unsafe_allow_html=True)
+
+    st.markdown("<br><br>", unsafe_allow_html=True)
+    st.info("👈 **Instrucción:** Por favor, ingrese su usuario y contraseña asignados en el panel lateral izquierdo para acceder al sistema.")
     st.stop()
 
 user = st.session_state.user
 
-# ENCABEZADO SUPERIOR
+# ENCABEZADO SUPERIOR DEL DASHBOARD
 st.markdown("""
 <div class="header-container">
     <div class="header-title">DASHBOARD DE MONITOREO Y SEGUIMIENTO DE SOLICITUDES DE RECURSOS - SEDE CENTRAL & UNIDADES ZONALES</div>
 </div>
 """, unsafe_allow_html=True)
 
-# BARRA LATERAL (MENÚ Y FILTROS)
+# BARRA LATERAL CON DATOS DE USUARIO AUTENTICADO
 st.sidebar.markdown(f"👤 **{user['nombre']}**")
 st.sidebar.markdown(f"📌 *{user['rol']}*")
 if user["rol"] == "ESPECIALISTA_ZONAL":
@@ -186,7 +247,7 @@ if user["rol"] == "SEDE_CENTRAL":
     )
     st.markdown("---")
 
-# 2. BANDEJA DE TRABAJO PRINCIPAL (VISIBLE PARA TODOS SEGÚN SU ROL)
+# 2. BANDEJA DE TRABAJO PRINCIPAL
 st.markdown("### 📋 Bandeja de Trabajo - Monitoreo y Seguimiento")
 st.dataframe(df_f, use_container_width=True)
 
