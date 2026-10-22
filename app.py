@@ -324,7 +324,7 @@ if user["rol"] == "ESPECIALISTA_ZONAL":
 
     st.markdown("---")
 
-# 1.1. GESTIÓN SEDE CENTRAL (SI ES SEDE CENTRAL) - MUESTRA HT, PROVINCIA Y MES
+# 1.1. GESTIÓN SEDE CENTRAL (SI ES SEDE CENTRAL)
 if user["rol"] == "SEDE_CENTRAL":
     st.markdown("### 🏛️ Gestión Sede Central: Validación y Actualización de Estados GMS")
     
@@ -334,7 +334,6 @@ if user["rol"] == "SEDE_CENTRAL":
         cond_no_validado = df["Estado_GMS"].astype(str).str.strip().str.lower() != "validado"
         df_pendientes_validacion = df[cond_opinion & cond_no_validado]
     
-    # Crear diccionario y lista con formato: HT — Provincia (Mes)
     ht_mapping = {}
     if not df_pendientes_validacion.empty:
         for _, row in df_pendientes_validacion.iterrows():
@@ -416,14 +415,12 @@ with col_ex2:
 
 st.markdown("---")
 
-# 5. MÓDULOS INFERIORES (EFICIENCIA POR PROVINCIA Y MES - ALINEADO HORIZONTAL)
-col_inf1, col_inf2 = st.columns(2)
-
-with col_inf1:
+# 5. MÓDULOS INFERIORES: SEDE CENTRAL (ANCHO COMPLETO Y 90°) VS ZONALES (DOS COLUMNAS)
+if user["rol"] == "SEDE_CENTRAL":
     st.markdown("### 🚨 Alertas de Solicitudes Críticas")
     st.info("No se registran solicitudes críticas con exceso de días en la bandeja actual.")
-
-with col_inf2:
+    
+    st.markdown("<br>", unsafe_allow_html=True)
     st.markdown("### 📈 Eficiencia: Trámites por Provincia y Mes")
     if not df_f.empty and "Mes" in df_f.columns:
         ORDEN_MESES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Setiembre", "Septiembre", "Octubre", "Noviembre", "Diciembre"]
@@ -446,10 +443,48 @@ with col_inf2:
             }
         )
         fig.update_layout(
-            height=340, 
-            margin=dict(l=10, r=10, t=10, b=10),
-            xaxis=dict(tickangle=0)
+            height=450, 
+            margin=dict(l=10, r=10, t=10, b=50),
+            xaxis=dict(tickangle=90)  # Provincias a 90° para Sede Central
         )
         st.plotly_chart(fig, use_container_width=True)
     else:
         st.warning("No se cuenta con la información necesaria en la base de datos para graficar la eficiencia.")
+
+else:
+    col_inf1, col_inf2 = st.columns(2)
+
+    with col_inf1:
+        st.markdown("### 🚨 Alertas de Solicitudes Críticas")
+        st.info("No se registran solicitudes críticas con exceso de días en la bandeja actual.")
+
+    with col_inf2:
+        st.markdown("### 📈 Eficiencia: Trámites por Provincia y Mes")
+        if not df_f.empty and "Mes" in df_f.columns:
+            ORDEN_MESES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Setiembre", "Septiembre", "Octubre", "Noviembre", "Diciembre"]
+            
+            df_eficiencia = df_f.groupby(["Provincia_Formateada", "Mes"], as_index=False)["Num_Tramos"].sum()
+            df_eficiencia["Mes"] = pd.Categorical(df_eficiencia["Mes"], categories=ORDEN_MESES, ordered=True)
+            df_eficiencia = df_eficiencia.sort_values("Mes")
+            
+            fig = px.bar(
+                df_eficiencia, 
+                x="Provincia_Formateada", 
+                y="Num_Tramos", 
+                color="Mes", 
+                barmode="group",
+                category_orders={"Mes": ORDEN_MESES},
+                labels={
+                    "Provincia_Formateada": "Provincia", 
+                    "Num_Tramos": "Cantidad de Tramos / Trámites",
+                    "Mes": "Mes"
+                }
+            )
+            fig.update_layout(
+                height=340, 
+                margin=dict(l=10, r=10, t=10, b=10),
+                xaxis=dict(tickangle=0)
+            )
+            st.plotly_chart(fig, use_container_width=True)
+        else:
+            st.warning("No se cuenta con la información necesaria en la base de datos para graficar la eficiencia.")
