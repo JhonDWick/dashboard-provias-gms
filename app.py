@@ -10,10 +10,9 @@ st.set_page_config(
     layout="wide"
 )
 
-# Estilos CSS Profesionales e Institucionales (Fondo vial en barra lateral y tarjetas uniformes)
+# Estilos CSS Profesionales e Institucionales (Tarjetas de bienvenida con dimensiones estrictamente iguales)
 st.markdown("""
     <style>
-    /* Fondo de infraestructura vial en la barra lateral con capa institucional */
     [data-testid="stSidebar"] {
         background-image: linear-gradient(rgba(11, 79, 138, 0.90), rgba(11, 79, 138, 0.90)), url("https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?q=80&w=1000&auto=format&fit=crop");
         background-size: cover;
@@ -70,14 +69,31 @@ st.markdown("""
         font-weight: bold; 
         margin: 0;
     }
+    /* Tarjetas de bienvenida con altura y dimensiones estrictamente idénticas */
     .welcome-card {
         background-color: #f8f9fa;
         border: 1px solid #e0e0e0;
         border-top: 4px solid #0b4f8a;
-        padding: 20px;
+        padding: 22px 18px;
         border-radius: 8px;
         text-align: center;
-        height: 100%;
+        height: 185px;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        align-items: center;
+    }
+    .welcome-card h4 {
+        font-size: 16px;
+        color: #0b4f8a;
+        margin-bottom: 10px;
+        margin-top: 0;
+    }
+    .welcome-card p {
+        font-size: 13px;
+        color: #555;
+        line-height: 1.4;
+        margin: 0;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -127,7 +143,7 @@ if not st.session_state.logged_in:
         else:
             st.sidebar.error("Usuario o contraseña incorrectos.")
     
-    # PANTALLA DE BIENVENIDA INSTITUCIONAL EN EL ÁREA PRINCIPAL (RECUADRO ROJO)
+    # PANTALLA DE BIENVENIDA INSTITUCIONAL CON ENLACES EXTERNOS AL MEF
     st.markdown("""
         <div style="background-color: #0b4f8a; padding: 25px; border-radius: 8px; color: white; text-align: center; margin-bottom: 25px;">
             <h1 style="color: white; margin: 0; font-size: 26px;">MINISTERIO DE TRANSPORTES Y COMUNICACIONES</h1>
@@ -135,9 +151,21 @@ if not st.session_state.logged_in:
         </div>
     """, unsafe_allow_html=True)
 
-    st.markdown("### 🌐 Plataforma de Monitoreo y Gestión de Solicitudes de Recursos Financieros")
+    col_title, col_links = st.columns([3, 1])
+    with col_title:
+        st.markdown("### 🌐 Plataforma de Monitoreo y Gestión de Solicitudes de Recursos Financieros")
+    with col_links:
+        st.markdown(
+            """
+            <div style="text-align: right; padding-top: 5px;">
+                <a href="https://apps5.mineco.gob.pe/transparencia/Navegador/default.aspx?y=2026&ap=Actividad" target="_blank" title="Consulta amigable MEF - Actividad" style="font-size: 20px; text-decoration: none; margin-right: 10px;">🌐</a>
+                <a href="https://apps5.mineco.gob.pe/transferencias/gl/default.aspx" target="_blank" title="Transferencias Gobiernos Locales MEF" style="font-size: 20px; text-decoration: none;">🔗</a>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
     st.write("Sistema informático orientado al seguimiento, control de estados y tramitación de recursos para el mantenimiento rutinario de caminos vecinales a nivel nacional.")
-    
     st.markdown("<br>", unsafe_allow_html=True)
     
     col_w1, col_w2, col_w3 = st.columns(3)
@@ -145,21 +173,21 @@ if not st.session_state.logged_in:
         st.markdown("""
             <div class="welcome-card">
                 <h4>🛣️ Cobertura Zonal</h4>
-                <p style="font-size: 13px; color: #555;">Supervisión descentralizada en las jurisdicciones viales de las regiones de <b>Tacna, Moquegua y Huancavelica</b>.</p>
+                <p>Supervisión descentralizada en las jurisdicciones viales de las regiones de <b>Tacna, Moquegua y Huancavelica</b>.</p>
             </div>
         """, unsafe_allow_html=True)
     with col_w2:
         st.markdown("""
             <div class="welcome-card">
                 <h4>📊 Trazabilidad en Línea</h4>
-                <p style="font-size: 13px; color: #555;">Control automatizado de Hojas de Trámite (HT), opiniones favorables y validaciones centrales en tiempo real.</p>
+                <p>Control automatizado de Hojas de Trámite (HT), opiniones favorables y validaciones centrales en tiempo real.</p>
             </div>
         """, unsafe_allow_html=True)
     with col_w3:
         st.markdown("""
             <div class="welcome-card">
                 <h4>👥 Acceso por Roles</h4>
-                <p style="font-size: 13px; color: #555;">Perfiles diferenciados y seguros para Especialistas de Unidades Zonales y Especialistas de Sede Central.</p>
+                <p>Perfiles diferenciados y seguros para Especialistas de Unidades Zonales y Especialistas de Sede Central.</p>
             </div>
         """, unsafe_allow_html=True)
 
