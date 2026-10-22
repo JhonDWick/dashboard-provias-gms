@@ -112,20 +112,21 @@ def cargar_datos():
     except Exception as e:
         return pd.DataFrame()
 
-# Carga correcta del DataFrame base
 df = cargar_datos()
 
-# Función para convertir imágenes locales a Base64
-def img_to_base64(img_path):
-    try:
-        with open(img_path, "rb") as img_file:
-            return base64.b64encode(img_file.read()).decode()
-    except Exception:
-        return ""
+# Función para convertir imágenes locales a Base64 probando varias rutas/nombres exactos
+def img_to_base64(possible_names):
+    for name in possible_names:
+        try:
+            with open(name, "rb") as img_file:
+                return base64.b64encode(img_file.read()).decode()
+        except Exception:
+            continue
+    return ""
 
-# Cargar imágenes
-img_transp_b64 = img_to_base64("transparencia.png")
-img_transf_b64 = img_to_base64("transferencia.png")
+# Buscar las imágenes con los nombres exactos que subiste
+img_transp_b64 = img_to_base64(["Consulta Amigable.png", "consulta amigable.png", "transparencia.png"])
+img_transf_b64 = img_to_base64(["Consulta Transferencia.png", "consulta transferencia.png", "transferencia.png"])
 
 # Usuarios y Asignación Exacta de Provincias según Cuadro Oficial
 USUARIOS = {
@@ -158,7 +159,7 @@ if not st.session_state.logged_in:
         else:
             st.sidebar.error("Usuario o contraseña incorrectos.")
     
-    # PANTALLA DE BIENVENIDA INSTITUCIONAL CON ENLACES E IMÁGENES AL MEF
+    # PANTALLA DE BIENVENIDA INSTITUCIONAL CON LOGOS MEF
     st.markdown("""
         <div style="background-color: #0b4f8a; padding: 25px; border-radius: 8px; color: white; text-align: center; margin-bottom: 25px;">
             <h1 style="color: white; margin: 0; font-size: 26px;">MINISTERIO DE TRANSPORTES Y COMUNICACIONES</h1>
@@ -170,14 +171,18 @@ if not st.session_state.logged_in:
     with col_title:
         st.markdown("### 🌐 Plataforma de Monitoreo y Gestión de Solicitudes de Recursos Financieros")
     with col_links:
+        # Generar HTML seguro dependiendo de si las imágenes cargaron correctamente
+        html_transp = f'<img src="data:image/png;base64,{img_transp_b64}" style="height: 35px; width: auto; border-radius: 4px;" alt="Consulta Amigable"/>' if img_transp_b64 else '<span style="font-size: 13px; font-weight: bold; color: #0b4f8a;">Consulta Amigable</span>'
+        html_transf = f'<img src="data:image/png;base64,{img_transf_b64}" style="height: 35px; width: auto; border-radius: 4px;" alt="Consulta Transferencia"/>' if img_transf_b64 else '<span style="font-size: 13px; font-weight: bold; color: #0b4f8a;">Consulta Transferencia</span>'
+
         st.markdown(
             f"""
-            <div style="text-align: right; padding-top: 5px; display: flex; justify-content: flex-end; gap: 12px; align-items: center;">
+            <div style="text-align: right; padding-top: 5px; display: flex; justify-content: flex-end; gap: 15px; align-items: center;">
                 <a href="https://apps5.mineco.gob.pe/transparencia/Navegador/default.aspx?y=2026&ap=Actividad" target="_blank" title="Consulta Amigable MEF">
-                    <img src="data:image/png;base64,{img_transp_b64}" style="height: 32px; width: auto; border-radius: 4px;" alt="Consulta Amigable" />
+                    {html_transp}
                 </a>
                 <a href="https://apps5.mineco.gob.pe/transferencias/gl/default.aspx" target="_blank" title="Consulta de Transferencias MEF">
-                    <img src="data:image/png;base64,{img_transf_b64}" style="height: 32px; width: auto; border-radius: 4px;" alt="Consulta Transferencia" />
+                    {html_transf}
                 </a>
             </div>
             """,
