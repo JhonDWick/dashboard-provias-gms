@@ -135,9 +135,12 @@ def cargar_datos():
 
 df = cargar_datos()
 
-# Formatear columna Provincia
+# Formatear columna Provincia y ordenar por fecha de ingreso reciente a antigua
 if not df.empty and "Provincia" in df.columns:
     df["Provincia_Formateada"] = df["Provincia"].astype(str).str.strip().str.title()
+    if "Fecha_Ingreso_Zonal" in df.columns:
+        df["_Fecha_Temp"] = pd.to_datetime(df["Fecha_Ingreso_Zonal"], errors="coerce")
+        df = df.sort_values(by="_Fecha_Temp", ascending=False).drop(columns=["_Fecha_Temp"])
 else:
     df["Provincia_Formateada"] = "Sin información"
 
@@ -360,7 +363,7 @@ if user["rol"] == "SEDE_CENTRAL":
     )
     st.markdown("---")
 
-# 4. BANDEJA DE TRABAJO PRINCIPAL
+# 4. BANDEJA DE TRABAJO PRINCIPAL (ORDENADA DE MÁS RECIENTE A MÁS ANTIGUA)
 st.markdown("### 📋 Bandeja de Trabajo - Monitoreo y Seguimiento")
 st.dataframe(df_f, use_container_width=True)
 
@@ -381,13 +384,9 @@ with col_inf1:
 with col_inf2:
     st.markdown("### 📈 Eficiencia: Trámites por Provincia y Mes")
     if not df_f.empty and "Mes" in df_f.columns:
-        # Definición del orden cronológico estricto de los meses
         ORDEN_MESES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Setiembre", "Septiembre", "Octubre", "Noviembre", "Diciembre"]
         
-        # Agrupar únicamente por Provincia y por Mes
         df_eficiencia = df_f.groupby(["Provincia_Formateada", "Mes"], as_index=False)["Num_Tramos"].sum()
-        
-        # Ordenar cronológicamente
         df_eficiencia["Mes"] = pd.Categorical(df_eficiencia["Mes"], categories=ORDEN_MESES, ordered=True)
         df_eficiencia = df_eficiencia.sort_values("Mes")
         
@@ -407,7 +406,7 @@ with col_inf2:
         fig.update_layout(
             height=340, 
             margin=dict(l=10, r=10, t=10, b=10),
-            xaxis=dict(tickangle=0)  # Nombres de provincia alineados horizontalmente (sin inclinación)
+            xaxis=dict(tickangle=0)
         )
         st.plotly_chart(fig, use_container_width=True)
     else:
