@@ -289,58 +289,7 @@ sel_prov = st.sidebar.selectbox("Provincia", provincias_disponibles)
 if sel_prov != "Todas":
     df_f = df_f[df_f["Provincia"] == sel_prov]
 
-# RESUMEN EJECUTIVO (KPIS CON TAMAÑOS UNIFORMES)
-st.markdown("### 📊 Resumen Ejecutivo")
-
-total_s = len(df_f)
-op_fav = len(df_f[df_f["Estado_Zonal"] == "Opinión favorable"])
-val_gms = len(df_f[df_f["Estado_GMS"] == "Validado"])
-pend_val = len(df_f[df_f["Estado_GMS"] == "En revisión GMS"])
-rev_zonal = len(df_f[df_f["Estado_Zonal"] == "En revisión"])
-obs_zonal = len(df_f[df_f["Estado_Zonal"] == "Observado"])
-aprobadas = val_gms
-
-c1, c2, c3, c4, c5, c6, c7 = st.columns(7)
-with c1: st.markdown(f'<div class="kpi-card"><div class="kpi-title">Total Solicitudes</div><div class="kpi-value">{total_s}</div></div>', unsafe_allow_html=True)
-with c2: st.markdown(f'<div class="kpi-card"><div class="kpi-title">Op. Favorable Zonal</div><div class="kpi-value">{op_fav}</div></div>', unsafe_allow_html=True)
-with c3: st.markdown(f'<div class="kpi-card"><div class="kpi-title">Validación GMS</div><div class="kpi-value">{val_gms}</div></div>', unsafe_allow_html=True)
-with c4: st.markdown(f'<div class="kpi-card"><div class="kpi-title">Pendiente GMS</div><div class="kpi-value">{pend_val}</div></div>', unsafe_allow_html=True)
-with c5: st.markdown(f'<div class="kpi-card"><div class="kpi-title">En Revisión Zonal</div><div class="kpi-value">{rev_zonal}</div></div>', unsafe_allow_html=True)
-with c6: st.markdown(f'<div class="kpi-card"><div class="kpi-title">Observados</div><div class="kpi-value">{obs_zonal}</div></div>', unsafe_allow_html=True)
-with c7: st.markdown(f'<div class="kpi-card"><div class="kpi-title">Aprobadas/Tramitadas</div><div class="kpi-value">{aprobadas}</div></div>', unsafe_allow_html=True)
-
-st.markdown("<br>", unsafe_allow_html=True)
-
-# 1. BANDEJA EXCLUSIVA PARA SEDE CENTRAL (ÚLTIMAS 6 ACTUALIZACIONES ORDENADAS DE MÁS RECIENTE A MÁS ANTIGUA)
-if user["rol"] == "SEDE_CENTRAL":
-    st.markdown("### 🔔 Bandeja de Actualizaciones Recientes de Unidades Zonales")
-    st.info("Monitoreo en tiempo real de los trámites que registran avances, opiniones favorables u observaciones en regiones (Últimas 6 actualizaciones).")
-    
-    df_actualizaciones = df.copy()
-    if "Fecha_Opinion_Zonal" in df_actualizaciones.columns:
-        df_actualizaciones["Fecha_Temp"] = pd.to_datetime(df_actualizaciones["Fecha_Opinion_Zonal"], errors="coerce")
-        df_actualizaciones = df_actualizaciones.sort_values(by="Fecha_Temp", ascending=False).head(6)
-        df_actualizaciones = df_actualizaciones.drop(columns=["Fecha_Temp"])
-    
-    st.dataframe(
-        df_actualizaciones[["HT", "Region", "Provincia", "Servicio", "Estado_Zonal", "Fecha_Opinion_Zonal", "Estado_GMS"]],
-        use_container_width=True
-    )
-    st.markdown("---")
-
-# 2. BANDEJA DE TRABAJO PRINCIPAL
-st.markdown("### 📋 Bandeja de Trabajo - Monitoreo y Seguimiento")
-st.dataframe(df_f, use_container_width=True)
-
-# Botón de exportar reporte
-col_ex1, col_ex2 = st.columns([3, 1])
-with col_ex2:
-    csv_data = df_f.to_csv(index=False).encode('utf-8')
-    st.download_button("📥 Exportar Reporte (CSV)", data=csv_data, file_name=f"Reporte_Provincia_{sel_prov}.csv", mime="text/csv")
-
-st.markdown("---")
-
-# SECCIÓN EXCLUSIVA PARA EL ESPECIALISTA ZONAL (NUEVOS TRÁMITES Y ESTADOS)
+# 1. SECCIÓN EXCLUSIVA PARA EL ESPECIALISTA ZONAL (PRIMERO: GESTIÓN ZONAL)
 if user["rol"] == "ESPECIALISTA_ZONAL":
     st.markdown("### ➕ Gestión Zonal: Registrar Nueva Solicitud o Actualizar Estado")
     
@@ -373,6 +322,57 @@ if user["rol"] == "ESPECIALISTA_ZONAL":
             btn_act = st.form_submit_button("🔄 Actualizar Estado Zonal")
             if btn_act and ht_sel:
                 st.success(f"¡El estado zonal de la HT {ht_sel} fue actualizado a '{nuevo_est_z}' con éxito!")
+
+    st.markdown("---")
+
+# 2. RESUMEN EJECUTIVO (KPIS CON TAMAÑOS UNIFORMES)
+st.markdown("### 📊 Resumen Ejecutivo")
+
+total_s = len(df_f)
+op_fav = len(df_f[df_f["Estado_Zonal"] == "Opinión favorable"])
+val_gms = len(df_f[df_f["Estado_GMS"] == "Validado"])
+pend_val = len(df_f[df_f["Estado_GMS"] == "En revisión GMS"])
+rev_zonal = len(df_f[df_f["Estado_Zonal"] == "En revisión"])
+obs_zonal = len(df_f[df_f["Estado_Zonal"] == "Observado"])
+aprobadas = val_gms
+
+c1, c2, c3, c4, c5, c6, c7 = st.columns(7)
+with c1: st.markdown(f'<div class="kpi-card"><div class="kpi-title">Total Solicitudes</div><div class="kpi-value">{total_s}</div></div>', unsafe_allow_html=True)
+with c2: st.markdown(f'<div class="kpi-card"><div class="kpi-title">Op. Favorable Zonal</div><div class="kpi-value">{op_fav}</div></div>', unsafe_allow_html=True)
+with c3: st.markdown(f'<div class="kpi-card"><div class="kpi-title">Validación GMS</div><div class="kpi-value">{val_gms}</div></div>', unsafe_allow_html=True)
+with c4: st.markdown(f'<div class="kpi-card"><div class="kpi-title">Pendiente GMS</div><div class="kpi-value">{pend_val}</div></div>', unsafe_allow_html=True)
+with c5: st.markdown(f'<div class="kpi-card"><div class="kpi-title">En Revisión Zonal</div><div class="kpi-value">{rev_zonal}</div></div>', unsafe_allow_html=True)
+with c6: st.markdown(f'<div class="kpi-card"><div class="kpi-title">Observados</div><div class="kpi-value">{obs_zonal}</div></div>', unsafe_allow_html=True)
+with c7: st.markdown(f'<div class="kpi-card"><div class="kpi-title">Aprobadas/Tramitadas</div><div class="kpi-value">{aprobadas}</div></div>', unsafe_allow_html=True)
+
+st.markdown("<br>", unsafe_allow_html=True)
+
+# 3. BANDEJA EXCLUSIVA PARA SEDE CENTRAL (ÚLTIMAS 6 ACTUALIZACIONES)
+if user["rol"] == "SEDE_CENTRAL":
+    st.markdown("### 🔔 Bandeja de Actualizaciones Recientes de Unidades Zonales")
+    st.info("Monitoreo en tiempo real de los trámites que registran avances, opiniones favorables u observaciones en regiones (Últimas 6 actualizaciones).")
+    
+    df_actualizaciones = df.copy()
+    if "Fecha_Opinion_Zonal" in df_actualizaciones.columns:
+        df_actualizaciones["Fecha_Temp"] = pd.to_datetime(df_actualizaciones["Fecha_Opinion_Zonal"], errors="coerce")
+        df_actualizaciones = df_actualizaciones.sort_values(by="Fecha_Temp", ascending=False).head(6)
+        df_actualizaciones = df_actualizaciones.drop(columns=["Fecha_Temp"])
+    
+    st.dataframe(
+        df_actualizaciones[["HT", "Region", "Provincia", "Servicio", "Estado_Zonal", "Fecha_Opinion_Zonal", "Estado_GMS"]],
+        use_container_width=True
+    )
+    st.markdown("---")
+
+# 4. BANDEJA DE TRABAJO PRINCIPAL
+st.markdown("### 📋 Bandeja de Trabajo - Monitoreo y Seguimiento")
+st.dataframe(df_f, use_container_width=True)
+
+# Botón de exportar reporte
+col_ex1, col_ex2 = st.columns([3, 1])
+with col_ex2:
+    csv_data = df_f.to_csv(index=False).encode('utf-8')
+    st.download_button("📥 Exportar Reporte (CSV)", data=csv_data, file_name=f"Reporte_Provincia_{sel_prov}.csv", mime="text/csv")
 
 st.markdown("---")
 
