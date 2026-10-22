@@ -169,7 +169,24 @@ with c7: st.markdown(f'<div class="kpi-card"><div class="kpi-title">Aprobadas/Tr
 
 st.markdown("<br>", unsafe_allow_html=True)
 
-# BANDEJA DE TRABAJO PRINCIPAL
+# 1. BANDEJA EXCLUSIVA PARA SEDE CENTRAL (ÚLTIMAS 6 ACTUALIZACIONES ORDENADAS DE MÁS RECIENTE A MÁS ANTIGUA)
+if user["rol"] == "SEDE_CENTRAL":
+    st.markdown("### 🔔 Bandeja de Actualizaciones Recientes de Unidades Zonales")
+    st.info("Monitoreo en tiempo real de los trámites que registran avances, opiniones favorables u observaciones en las regiones (Últimas 6 actualizaciones).")
+    
+    df_actualizaciones = df.copy()
+    if "Fecha_Opinion_Zonal" in df_actualizaciones.columns:
+        df_actualizaciones["Fecha_Temp"] = pd.to_datetime(df_actualizaciones["Fecha_Opinion_Zonal"], errors="coerce")
+        df_actualizaciones = df_actualizaciones.sort_values(by="Fecha_Temp", ascending=False).head(6)
+        df_actualizaciones = df_actualizaciones.drop(columns=["Fecha_Temp"])
+    
+    st.dataframe(
+        df_actualizaciones[["HT", "Region", "Provincia", "Servicio", "Estado_Zonal", "Fecha_Opinion_Zonal", "Estado_GMS"]],
+        use_container_width=True
+    )
+    st.markdown("---")
+
+# 2. BANDEJA DE TRABAJO PRINCIPAL (VISIBLE PARA TODOS SEGÚN SU ROL)
 st.markdown("### 📋 Bandeja de Trabajo - Monitoreo y Seguimiento")
 st.dataframe(df_f, use_container_width=True)
 
@@ -180,23 +197,6 @@ with col_ex2:
     st.download_button("📥 Exportar Reporte (CSV)", data=csv_data, file_name=f"Reporte_Provincia_{sel_prov}.csv", mime="text/csv")
 
 st.markdown("---")
-
-# MÓDULO EXCLUSIVO PARA SEDE CENTRAL: BANDEJA DE ACTUALIZACIONES ZONALES (ÚLTIMAS 6 ORDENADAS DE MÁS RECIENTE A MÁS ANTIGUA)
-if user["rol"] == "SEDE_CENTRAL":
-    st.markdown("### 🔔 Bandeja de Actualizaciones Recientes de Unidades Zonales")
-    st.info("Monitoreo en tiempo real de los trámites que registran avances, opiniones favorables u observaciones en las regiones.")
-    
-    df_actualizaciones = df.copy()
-    if "Fecha_Opinion_Zonal" in df_actualizaciones.columns:
-        # Convertir a formato fecha real para ordenar correctamente de mayor a menor (descendente)
-        df_actualizaciones["Fecha_Temp"] = pd.to_datetime(df_actualizaciones["Fecha_Opinion_Zonal"], errors="coerce")
-        df_actualizaciones = df_actualizaciones.sort_values(by="Fecha_Temp", ascending=False).head(6)
-        df_actualizaciones = df_actualizaciones.drop(columns=["Fecha_Temp"])
-    
-    st.dataframe(
-        df_actualizaciones[["HT", "Region", "Provincia", "Servicio", "Estado_Zonal", "Fecha_Opinion_Zonal", "Estado_GMS"]],
-        use_container_width=True
-    )
 
 # SECCIÓN EXCLUSIVA PARA EL ESPECIALISTA ZONAL (NUEVOS TRÁMITES Y ESTADOS)
 if user["rol"] == "ESPECIALISTA_ZONAL":
