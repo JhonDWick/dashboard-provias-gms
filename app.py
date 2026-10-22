@@ -11,7 +11,7 @@ st.set_page_config(
     layout="wide"
 )
 
-# Estilos CSS Profesionales e Institucionales
+# Estilos CSS Profesionales e Institucionales (Corrección de visibilidad en botones)
 st.markdown("""
     <style>
     /* Fondo de infraestructura vial en la barra lateral con capa institucional */
@@ -23,6 +23,19 @@ st.markdown("""
     }
     [data-testid="stSidebar"] h1, [data-testid="stSidebar"] h2, [data-testid="stSidebar"] h3, [data-testid="stSidebar"] label, [data-testid="stSidebar"] p, [data-testid="stSidebar"] span {
         color: white !important;
+    }
+    /* Estilo claro y legible para todos los botones de Streamlit */
+    .stButton button {
+        background-color: #ffffff !important;
+        color: #0b4f8a !important;
+        font-weight: bold !important;
+        border: 1px solid #0b4f8a !important;
+        border-radius: 4px !important;
+    }
+    .stButton button:hover {
+        background-color: #f0f2f5 !important;
+        color: #07335c !important;
+        border-color: #07335c !important;
     }
     .header-container {
         background-color: #0b4f8a;
@@ -171,7 +184,6 @@ if not st.session_state.logged_in:
     with col_title:
         st.markdown("### 🌐 Plataforma de Monitoreo y Gestión de Solicitudes de Recursos Financieros")
     with col_links:
-        # Generar HTML seguro dependiendo de si las imágenes cargaron correctamente
         html_transp = f'<img src="data:image/png;base64,{img_transp_b64}" style="height: 35px; width: auto; border-radius: 4px;" alt="Consulta Amigable"/>' if img_transp_b64 else '<span style="font-size: 13px; font-weight: bold; color: #0b4f8a;">Consulta Amigable</span>'
         html_transf = f'<img src="data:image/png;base64,{img_transf_b64}" style="height: 35px; width: auto; border-radius: 4px;" alt="Consulta Transferencia"/>' if img_transf_b64 else '<span style="font-size: 13px; font-weight: bold; color: #0b4f8a;">Consulta Transferencia</span>'
 
