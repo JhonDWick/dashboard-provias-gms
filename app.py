@@ -181,18 +181,20 @@ with col_ex2:
 
 st.markdown("---")
 
-# MÓDULO EXCLUSIVO PARA SEDE CENTRAL: BANDEJA DE ACTUALIZACIONES ZONALES
+# MÓDULO EXCLUSIVO PARA SEDE CENTRAL: BANDEJA DE ACTUALIZACIONES ZONALES (ÚLTIMAS 6 ORDENADAS DE MÁS RECIENTE A MÁS ANTIGUA)
 if user["rol"] == "SEDE_CENTRAL":
     st.markdown("### 🔔 Bandeja de Actualizaciones Recientes de Unidades Zonales")
     st.info("Monitoreo en tiempo real de los trámites que registran avances, opiniones favorables u observaciones en las regiones.")
     
-    # Filtrar trámites que han tenido movimiento zonal reciente o relevante
     df_actualizaciones = df.copy()
     if "Fecha_Opinion_Zonal" in df_actualizaciones.columns:
-        df_actualizaciones = df_actualizaciones.sort_values(by="Fecha_Opinion_Zonal", ascending=False)
+        # Convertir a formato fecha real para ordenar correctamente de mayor a menor (descendente)
+        df_actualizaciones["Fecha_Temp"] = pd.to_datetime(df_actualizaciones["Fecha_Opinion_Zonal"], errors="coerce")
+        df_actualizaciones = df_actualizaciones.sort_values(by="Fecha_Temp", ascending=False).head(6)
+        df_actualizaciones = df_actualizaciones.drop(columns=["Fecha_Temp"])
     
     st.dataframe(
-        df_actualizaciones[["HT", "Region", "Provincia", "Servicio", "Estado_Zonal", "Fecha_Opinion_Zonal", "Estado_GMS"]].head(10),
+        df_actualizaciones[["HT", "Region", "Provincia", "Servicio", "Estado_Zonal", "Fecha_Opinion_Zonal", "Estado_GMS"]],
         use_container_width=True
     )
 
