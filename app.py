@@ -11,7 +11,7 @@ st.set_page_config(
     layout="wide"
 )
 
-# Estilos CSS Profesionales e Institucionales (Corrección absoluta de botones y textos en barra lateral)
+# Estilos CSS Profesionales e Institucionales (Solución forzada para texto de botones)
 st.markdown("""
     <style>
     /* Fondo de infraestructura vial en la barra lateral con capa institucional */
@@ -24,20 +24,28 @@ st.markdown("""
     [data-testid="stSidebar"] h1, [data-testid="stSidebar"] h2, [data-testid="stSidebar"] h3, [data-testid="stSidebar"] label, [data-testid="stSidebar"] p, [data-testid="stSidebar"] span {
         color: white !important;
     }
-    /* Estilo robusto para los botones con texto oscuro visible */
-    .stButton button {
-        background-color: #f8f9fa !important;
-        color: #0b4f8a !important;
-        font-weight: 700 !important;
+    
+    /* FORZAR COLOR OSCURO EN TODO TEXTO O ELEMENTO DENTRO DE LOS BOTONES */
+    div.stButton > button {
+        background-color: #ffffff !important;
         border: 2px solid #ffffff !important;
         border-radius: 6px !important;
         width: 100% !important;
+        height: 42px !important;
     }
-    .stButton button:hover {
-        background-color: #ffffff !important;
-        color: #07335c !important;
-        border-color: #e0e0e0 !important;
+    div.stButton > button * {
+        color: #0b4f8a !important;
+        font-weight: 800 !important;
+        font-size: 15px !important;
     }
+    div.stButton > button:hover {
+        background-color: #e2e8f0 !important;
+        border-color: #e2e8f0 !important;
+    }
+    div.stButton > button:hover * {
+        color: #072e52 !important;
+    }
+
     .header-container {
         background-color: #0b4f8a;
         padding: 12px 20px;
@@ -85,7 +93,6 @@ st.markdown("""
         font-weight: bold; 
         margin: 0;
     }
-    /* Tarjetas de bienvenida con dimensiones estrictamente idénticas */
     .welcome-card {
         background-color: #f8f9fa;
         border: 1px solid #e0e0e0;
@@ -138,7 +145,7 @@ def img_to_base64(possible_names):
             continue
     return ""
 
-# Buscar las imágenes con los nombres exactos que subiste
+# Buscar las imágenes con los nombres exactos
 img_transp_b64 = img_to_base64(["Consulta Amigable.png", "consulta amigable.png", "transparencia.png"])
 img_transf_b64 = img_to_base64(["Consulta Transferencia.png", "consulta transferencia.png", "transferencia.png"])
 
@@ -165,7 +172,9 @@ st.sidebar.markdown("---")
 if not st.session_state.logged_in:
     usr = st.sidebar.text_input("Usuario")
     pwd = st.sidebar.text_input("Contraseña", type="password")
-    if st.sidebar.button("Iniciar Sesión"):
+    
+    # Botón con etiqueta directa
+    if st.sidebar.button("INICIAR SESIÓN", key="btn_login"):
         if usr in USUARIOS and USUARIOS[usr]["pass"] == pwd:
             st.session_state.logged_in = True
             st.session_state.user = USUARIOS[usr]
@@ -247,7 +256,7 @@ st.sidebar.markdown(f"📌 *{user['rol']}*")
 if user["rol"] == "ESPECIALISTA_ZONAL":
     st.sidebar.markdown(f"📍 **Provincias a cargo:** {', '.join(user['provincias'])}")
 
-if st.sidebar.button("Cerrar Sesión"):
+if st.sidebar.button("CERRAR SESIÓN", key="btn_logout"):
     st.session_state.logged_in = False
     st.rerun()
 
