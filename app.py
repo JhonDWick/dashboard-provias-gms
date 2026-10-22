@@ -135,7 +135,34 @@ def cargar_datos():
 
 df = cargar_datos()
 
-# Función para convertir imágenes locales a Base64 probando varias rutas/nombres exactos
+# Diccionario oficial de mapeo de Especialistas y sus Provincias
+MAPEO_ESPECIALISTAS = {
+    "ACOBAMBA": "José Parra Benavides (Acobamba)",
+    "ANGARAES": "Edgar Vásquez Rivera (Angaraes, Churcampa)",
+    "CHURCAMPA": "Edgar Vásquez Rivera (Angaraes, Churcampa)",
+    "CASTROVIRREYNA": "Jhon Ponce Francia (Castrovirreyna, Huaytará)",
+    "HUAYTARÁ": "Jhon Ponce Francia (Castrovirreyna, Huaytará)",
+    "HUANCAVELICA": "Jaqueline Carhuaricra (Huancavelica)",
+    "TAYACAJA": "Randolf León Rojas (Tayacaja)",
+    "TACNA": "Alexa Torres Flores (Tacna, Candarave, Tarata, J. Basadre)",
+    "CANDARAVE": "Alexa Torres Flores (Tacna, Candarave, Tarata, J. Basadre)",
+    "TARATA": "Alexa Torres Flores (Tacna, Candarave, Tarata, J. Basadre)",
+    "JORGE BASADRE": "Alexa Torres Flores (Tacna, Candarave, Tarata, J. Basadre)",
+    "MARISCAL NIETO": "Luis Ortiz Fonttis (Mariscal Nieto, Ilo, G. Sánchez Cerro)",
+    "ILO": "Luis Ortiz Fonttis (Mariscal Nieto, Ilo, G. Sánchez Cerro)",
+    "GENERAL SANCHEZ CERRO": "Luis Ortiz Fonttis (Mariscal Nieto, Ilo, G. Sánchez Cerro)"
+}
+
+def asignar_especialista(prov):
+    prov_limpia = str(prov).strip().upper()
+    return MAPEO_ESPECIALISTAS.get(prov_limpia, "Sede Central / Otro")
+
+if not df.empty and "Provincia" in df.columns:
+    df["Especialista_Zona"] = df["Provincia"].apply(asignar_especialista)
+else:
+    df["Especialista_Zona"] = "No especificado"
+
+# Función para convertir imágenes locales a Base64
 def img_to_base64(possible_names):
     for name in possible_names:
         try:
@@ -145,11 +172,10 @@ def img_to_base64(possible_names):
             continue
     return ""
 
-# Buscar las imágenes con los nombres exactos en el repositorio
 img_transp_b64 = img_to_base64(["Consulta Amigable.png", "consulta amigable.png", "transparencia.png"])
 img_transf_b64 = img_to_base64(["Consulta Transferencia.png", "consulta transferencia.png", "transferencia.png"])
 
-# Usuarios y Asignación Exacta de Provincias según Cuadro Oficial
+# Usuarios y Asignación Exacta de Provincias
 USUARIOS = {
     "central_gms": {"pass": "GmsCentral2026!", "nombre": "Especialista Sede Central", "rol": "SEDE_CENTRAL", "provincias": "TODAS"},
     "jparra": {"pass": "Zonal2026!", "nombre": "José Parra Benavides", "rol": "ESPECIALISTA_ZONAL", "provincias": ["ACOBAMBA"]},
@@ -181,19 +207,11 @@ if not st.session_state.logged_in:
         else:
             st.sidebar.error("Usuario o contraseña incorrectos.")
     
-    # UBICACIÓN DE LAS IMÁGENES EN LA BARRA LATERAL (PARTE INFERIOR)
     st.sidebar.markdown("<br><br>", unsafe_allow_html=True)
     st.sidebar.markdown("<p style='text-align: center; font-size: 13px; font-weight: bold; margin-bottom: 8px; color: white;'>ENLACES DE INTERÉS MEF</p>", unsafe_allow_html=True)
     
-    if img_transp_b64:
-        html_transp = f'<img src="data:image/png;base64,{img_transp_b64}" style="max-height: 45px; width: auto; border-radius: 4px; background-color: white; padding: 4px;" alt="Consulta Amigable"/>'
-    else:
-        html_transp = '<span style="font-size: 13px; font-weight: bold; color: white;">Consulta Amigable</span>'
-
-    if img_transf_b64:
-        html_transf = f'<img src="data:image/png;base64,{img_transf_b64}" style="max-height: 45px; width: auto; border-radius: 4px; background-color: white; padding: 4px;" alt="Consulta Transferencia"/>'
-    else:
-        html_transf = '<span style="font-size: 13px; font-weight: bold; color: white;">Consulta Transferencia</span>'
+    html_transp = f'<img src="data:image/png;base64,{img_transp_b64}" style="max-height: 45px; width: auto; border-radius: 4px; background-color: white; padding: 4px;" alt="Consulta Amigable"/>' if img_transp_b64 else '<span style="font-size: 13px; font-weight: bold; color: white;">Consulta Amigable</span>'
+    html_transf = f'<img src="data:image/png;base64,{img_transf_b64}" style="max-height: 45px; width: auto; border-radius: 4px; background-color: white; padding: 4px;" alt="Consulta Transferencia"/>' if img_transf_b64 else '<span style="font-size: 13px; font-weight: bold; color: white;">Consulta Transferencia</span>'
 
     st.sidebar.markdown(
         f"""
@@ -209,7 +227,6 @@ if not st.session_state.logged_in:
         unsafe_allow_html=True
     )
     
-    # PANTALLA DE BIENVENIDA INSTITUCIONAL EN EL ÁREA PRINCIPAL
     st.markdown("""
         <div style="background-color: #0b4f8a; padding: 25px; border-radius: 8px; color: white; text-align: center; margin-bottom: 25px;">
             <h1 style="color: white; margin: 0; font-size: 26px;">MINISTERIO DE TRANSPORTES Y COMUNICACIONES</h1>
@@ -289,7 +306,7 @@ sel_prov = st.sidebar.selectbox("Provincia", provincias_disponibles)
 if sel_prov != "Todas":
     df_f = df_f[df_f["Provincia"] == sel_prov]
 
-# 1. SECCIÓN EXCLUSIVA PARA EL ESPECIALISTA ZONAL (PRIMERO: GESTIÓN ZONAL)
+# 1. GESTIÓN ZONAL (SI ES ESPECIALISTA ZONAL)
 if user["rol"] == "ESPECIALISTA_ZONAL":
     st.markdown("### ➕ Gestión Zonal: Registrar Nueva Solicitud o Actualizar Estado")
     
@@ -325,7 +342,7 @@ if user["rol"] == "ESPECIALISTA_ZONAL":
 
     st.markdown("---")
 
-# 2. RESUMEN EJECUTIVO (KPIS CON TAMAÑOS UNIFORMES)
+# 2. RESUMEN EJECUTIVO (KPIS)
 st.markdown("### 📊 Resumen Ejecutivo")
 
 total_s = len(df_f)
@@ -347,7 +364,7 @@ with c7: st.markdown(f'<div class="kpi-card"><div class="kpi-title">Aprobadas/Tr
 
 st.markdown("<br>", unsafe_allow_html=True)
 
-# 3. BANDEJA EXCLUSIVA PARA SEDE CENTRAL (ÚLTIMAS 6 ACTUALIZACIONES)
+# 3. BANDEJA EXCLUSIVA PARA SEDE CENTRAL
 if user["rol"] == "SEDE_CENTRAL":
     st.markdown("### 🔔 Bandeja de Actualizaciones Recientes de Unidades Zonales")
     st.info("Monitoreo en tiempo real de los trámites que registran avances, opiniones favorables u observaciones en regiones (Últimas 6 actualizaciones).")
@@ -368,7 +385,6 @@ if user["rol"] == "SEDE_CENTRAL":
 st.markdown("### 📋 Bandeja de Trabajo - Monitoreo y Seguimiento")
 st.dataframe(df_f, use_container_width=True)
 
-# Botón de exportar reporte
 col_ex1, col_ex2 = st.columns([3, 1])
 with col_ex2:
     csv_data = df_f.to_csv(index=False).encode('utf-8')
@@ -376,7 +392,7 @@ with col_ex2:
 
 st.markdown("---")
 
-# MÓDULOS INFERIORES (ALERTAS Y EFICIENCIA)
+# 5. MÓDULOS INFERIORES (ALERTAS Y EFICIENCIA ACTUALIZADA POR ESPECIALISTA, PROVINCIAS Y MES)
 col_inf1, col_inf2 = st.columns(2)
 
 with col_inf1:
@@ -384,8 +400,24 @@ with col_inf1:
     st.info("No se registran solicitudes críticas con exceso de días en la bandeja actual.")
 
 with col_inf2:
-    st.markdown("### 📈 Eficiencia por Región / Zona")
-    if not df_f.empty:
-        fig = px.bar(df_f, x="Region", y="Num_Tramos", color="Estado_Zonal", barmode="group")
-        fig.update_layout(height=280, margin=dict(l=10, r=10, t=10, b=10))
+    st.markdown("### 📈 Eficiencia: Trámites por Especialista, Provincias y Mes")
+    if not df_f.empty and "Mes" in df_f.columns:
+        # Agrupar por Especialista_Zona y Mes sumando el número de tramos o conteo de trámites
+        df_eficiencia = df_f.groupby(["Especialista_Zona", "Mes"], as_index=False)["Num_Tramos"].sum()
+        
+        fig = px.bar(
+            df_eficiencia, 
+            x="Especialista_Zona", 
+            y="Num_Tramos", 
+            color="Mes", 
+            barmode="group",
+            labels={"Especialista_Zona": "Especialista y Provincias a Cargo", "Num_Tramos": "Cantidad de Tramos / Trámites"}
+        )
+        fig.update_layout(
+            height=320, 
+            margin=dict(l=10, r=10, t=10, b=10),
+            xaxis_tickangle=-25
+        )
         st.plotly_chart(fig, use_container_width=True)
+    else:
+        st.warning("No se cuenta con la columna 'Mes' en los datos para graficar la eficiencia temporal.")
