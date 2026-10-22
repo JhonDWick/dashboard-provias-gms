@@ -135,32 +135,34 @@ def cargar_datos():
 
 df = cargar_datos()
 
-# Diccionario oficial de mapeo de Especialistas y sus Provincias
+# Diccionario oficial de mapeo de Especialistas por Provincia
 MAPEO_ESPECIALISTAS = {
-    "ACOBAMBA": "José Parra Benavides (Acobamba)",
-    "ANGARAES": "Edgar Vásquez Rivera (Angaraes, Churcampa)",
-    "CHURCAMPA": "Edgar Vásquez Rivera (Angaraes, Churcampa)",
-    "CASTROVIRREYNA": "Jhon Ponce Francia (Castrovirreyna, Huaytará)",
-    "HUAYTARÁ": "Jhon Ponce Francia (Castrovirreyna, Huaytará)",
-    "HUANCAVELICA": "Jaqueline Carhuaricra (Huancavelica)",
-    "TAYACAJA": "Randolf León Rojas (Tayacaja)",
-    "TACNA": "Alexa Torres Flores (Tacna, Candarave, Tarata, J. Basadre)",
-    "CANDARAVE": "Alexa Torres Flores (Tacna, Candarave, Tarata, J. Basadre)",
-    "TARATA": "Alexa Torres Flores (Tacna, Candarave, Tarata, J. Basadre)",
-    "JORGE BASADRE": "Alexa Torres Flores (Tacna, Candarave, Tarata, J. Basadre)",
-    "MARISCAL NIETO": "Luis Ortiz Fonttis (Mariscal Nieto, Ilo, G. Sánchez Cerro)",
-    "ILO": "Luis Ortiz Fonttis (Mariscal Nieto, Ilo, G. Sánchez Cerro)",
-    "GENERAL SANCHEZ CERRO": "Luis Ortiz Fonttis (Mariscal Nieto, Ilo, G. Sánchez Cerro)"
+    "ACOBAMBA": "José Parra Benavides",
+    "ANGARAES": "Edgar Vásquez Rivera",
+    "CHURCAMPA": "Edgar Vásquez Rivera",
+    "CASTROVIRREYNA": "Jhon Ponce Francia",
+    "HUAYTARÁ": "Jhon Ponce Francia",
+    "HUANCAVELICA": "Jaqueline Carhuaricra",
+    "TAYACAJA": "Randolf León Rojas",
+    "TACNA": "Alexa Torres Flores",
+    "CANDARAVE": "Alexa Torres Flores",
+    "TARATA": "Alexa Torres Flores",
+    "JORGE BASADRE": "Alexa Torres Flores",
+    "MARISCAL NIETO": "Luis Ortiz Fonttis",
+    "ILO": "Luis Ortiz Fonttis",
+    "GENERAL SANCHEZ CERRO": "Luis Ortiz Fonttis"
 }
 
 def asignar_especialista(prov):
     prov_limpia = str(prov).strip().upper()
-    return MAPEO_ESPECIALISTAS.get(prov_limpia, "Sede Central / Otro")
+    return MAPEO_ESPECIALISTAS.get(prov_limpia, "Sede Central")
 
 if not df.empty and "Provincia" in df.columns:
-    df["Especialista_Zona"] = df["Provincia"].apply(asignar_especialista)
+    df["Especialista_Nombre"] = df["Provincia"].apply(asignar_especialista)
+    # Crear etiqueta combinada con Especialista y Provincia exacta
+    df["Especialista_Provincia"] = df["Especialista_Nombre"] + " - " + df["Provincia"].astype(str).str.title()
 else:
-    df["Especialista_Zona"] = "No especificado"
+    df["Especialista_Provincia"] = "Sin información"
 
 # Función para convertir imágenes locales a Base64
 def img_to_base64(possible_names):
@@ -392,7 +394,7 @@ with col_ex2:
 
 st.markdown("---")
 
-# 5. MÓDULOS INFERIORES (ALERTAS Y EFICIENCIA ACTUALIZADA POR ESPECIALISTA, PROVINCIAS Y MES)
+# 5. MÓDULOS INFERIORES (EFICIENCIA CON PROVINCIAS Y MESES ORDENADOS)
 col_inf1, col_inf2 = st.columns(2)
 
 with col_inf1:
@@ -400,24 +402,36 @@ with col_inf1:
     st.info("No se registran solicitudes críticas con exceso de días en la bandeja actual.")
 
 with col_inf2:
-    st.markdown("### 📈 Eficiencia: Trámites por Especialista, Provincias y Mes")
+    st.markdown("### 📈 Eficiencia: Trámites por Especialista, Provincia y Mes")
     if not df_f.empty and "Mes" in df_f.columns:
-        # Agrupar por Especialista_Zona y Mes sumando el número de tramos o conteo de trámites
-        df_eficiencia = df_f.groupby(["Especialista_Zona", "Mes"], as_index=False)["Num_Tramos"].sum()
+        # Definición del orden cronológico estricto de los meses
+        ORDEN_MESES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Setiembre", "Septiembre", "Octubre", "Noviembre", "Diciembre"]
+        
+        # Agrupar por Especialista + Provincia y por Mes
+        df_eficiencia = df_f.groupby(["Especialista_Provincia", "Mes"], as_index=False)["Num_Tramos"].sum()
+        
+        # Asignar categoría ordenada al Mes para garantizar secuencia cronológica
+        df_eficiencia["Mes"] = pd.Categorical(df_eficiencia["Mes"], categories=ORDEN_MESES, ordered=True)
+        df_eficiencia = df_eficiencia.sort_values("Mes")
         
         fig = px.bar(
             df_eficiencia, 
-            x="Especialista_Zona", 
+            x="Especialista_Provincia", 
             y="Num_Tramos", 
             color="Mes", 
             barmode="group",
-            labels={"Especialista_Zona": "Especialista y Provincias a Cargo", "Num_Tramos": "Cantidad de Tramos / Trámites"}
+            category_orders={"Mes": ORDEN_MESES},
+            labels={
+                "Especialista_Provincia": "Especialista - Provincia", 
+                "Num_Tramos": "Cantidad de Tramos / Trámites",
+                "Mes": "Mes"
+            }
         )
         fig.update_layout(
-            height=320, 
+            height=340, 
             margin=dict(l=10, r=10, t=10, b=10),
-            xaxis_tickangle=-25
+            xaxis_tickangle=-20
         )
         st.plotly_chart(fig, use_container_width=True)
     else:
-        st.warning("No se cuenta con la columna 'Mes' en los datos para graficar la eficiencia temporal.")
+        st.warning("No se cuenta con la información necesaria en la base de datos para graficar la eficiencia.")
