@@ -181,12 +181,19 @@ if not st.session_state.logged_in:
         else:
             st.sidebar.error("Usuario o contraseña incorrectos.")
     
-    # UBICACIÓN DE LAS IMÁGENES EN LA BARRA LATERAL (DONDE INDICÓ LA FLECHA)
+    # UBICACIÓN DE LAS IMÁGENES EN LA BARRA LATERAL (PARTE INFERIOR)
     st.sidebar.markdown("<br><br>", unsafe_allow_html=True)
-    st.sidebar.markdown("<p style='text-align: center; font-size: 13px; font-weight: bold; margin-bottom: 8px;'>ENLACES DE INTERÉS MEF</p>", unsafe_allow_html=True)
+    st.sidebar.markdown("<p style='text-align: center; font-size: 13px; font-weight: bold; margin-bottom: 8px; color: white;'>ENLACES DE INTERÉS MEF</p>", unsafe_allow_html=True)
     
-    html_transp = f'<img src="data:image/png;base64,{img_transp_b64}" style="max-height: 45px; width: auto; border-radius: 4px; background-color: white; padding: 4px;" alt="Consulta Amigable"/>' if img_transp_b64 else '<span style="font-size: 13px; font-weight: bold; color: white;">Consulta Amigable</span>'
-    html_transf = f'<img src="data:image/png;base64,{img_transf_b64}" style="max-height: 45px; width: auto; border-radius: 4px; background-color: white; padding: 4px;" alt="Consulta Transferencia"/>' if img_transf_b64 else '<span style="font-size: 13px; font-weight: bold; color: white;">Consulta Transferencia</span>'
+    if img_transp_b64:
+        html_transp = f'<img src="data:image/png;base64,{img_transp_b64}" style="max-height: 45px; width: auto; border-radius: 4px; background-color: white; padding: 4px;" alt="Consulta Amigable"/>'
+    else:
+        html_transp = '<span style="font-size: 13px; font-weight: bold; color: white;">Consulta Amigable</span>'
+
+    if img_transf_b64:
+        html_transf = f'<img src="data:image/png;base64,{img_transf_b64}" style="max-height: 45px; width: auto; border-radius: 4px; background-color: white; padding: 4px;" alt="Consulta Transferencia"/>'
+    else:
+        html_transf = '<span style="font-size: 13px; font-weight: bold; color: white;">Consulta Transferencia</span>'
 
     st.sidebar.markdown(
         f"""
