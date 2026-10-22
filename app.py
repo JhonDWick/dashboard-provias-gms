@@ -11,7 +11,7 @@ st.set_page_config(
     layout="wide"
 )
 
-# Estilos CSS Profesionales e Institucionales (Solución forzada para texto de botones)
+# Estilos CSS Profesionales e Institucionales
 st.markdown("""
     <style>
     /* Fondo de infraestructura vial en la barra lateral con capa institucional */
@@ -145,7 +145,7 @@ def img_to_base64(possible_names):
             continue
     return ""
 
-# Buscar las imágenes con los nombres exactos
+# Buscar las imágenes con los nombres exactos en el repositorio
 img_transp_b64 = img_to_base64(["Consulta Amigable.png", "consulta amigable.png", "transparencia.png"])
 img_transf_b64 = img_to_base64(["Consulta Transferencia.png", "consulta transferencia.png", "transferencia.png"])
 
@@ -173,7 +173,6 @@ if not st.session_state.logged_in:
     usr = st.sidebar.text_input("Usuario")
     pwd = st.sidebar.text_input("Contraseña", type="password")
     
-    # Botón con etiqueta directa
     if st.sidebar.button("INICIAR SESIÓN", key="btn_login"):
         if usr in USUARIOS and USUARIOS[usr]["pass"] == pwd:
             st.session_state.logged_in = True
@@ -182,7 +181,28 @@ if not st.session_state.logged_in:
         else:
             st.sidebar.error("Usuario o contraseña incorrectos.")
     
-    # PANTALLA DE BIENVENIDA INSTITUCIONAL CON LOGOS MEF
+    # UBICACIÓN DE LAS IMÁGENES EN LA BARRA LATERAL (DONDE INDICÓ LA FLECHA)
+    st.sidebar.markdown("<br><br>", unsafe_allow_html=True)
+    st.sidebar.markdown("<p style='text-align: center; font-size: 13px; font-weight: bold; margin-bottom: 8px;'>ENLACES DE INTERÉS MEF</p>", unsafe_allow_html=True)
+    
+    html_transp = f'<img src="data:image/png;base64,{img_transp_b64}" style="max-height: 45px; width: auto; border-radius: 4px; background-color: white; padding: 4px;" alt="Consulta Amigable"/>' if img_transp_b64 else '<span style="font-size: 13px; font-weight: bold; color: white;">Consulta Amigable</span>'
+    html_transf = f'<img src="data:image/png;base64,{img_transf_b64}" style="max-height: 45px; width: auto; border-radius: 4px; background-color: white; padding: 4px;" alt="Consulta Transferencia"/>' if img_transf_b64 else '<span style="font-size: 13px; font-weight: bold; color: white;">Consulta Transferencia</span>'
+
+    st.sidebar.markdown(
+        f"""
+        <div style="text-align: center; display: flex; flex-direction: column; gap: 12px; align-items: center; padding-bottom: 20px;">
+            <a href="https://apps5.mineco.gob.pe/transparencia/Navegador/default.aspx?y=2026&ap=Actividad" target="_blank" title="Consulta Amigable MEF">
+                {html_transp}
+            </a>
+            <a href="https://apps5.mineco.gob.pe/transferencias/gl/default.aspx" target="_blank" title="Consulta de Transferencias MEF">
+                {html_transf}
+            </a>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+    
+    # PANTALLA DE BIENVENIDA INSTITUCIONAL EN EL ÁREA PRINCIPAL
     st.markdown("""
         <div style="background-color: #0b4f8a; padding: 25px; border-radius: 8px; color: white; text-align: center; margin-bottom: 25px;">
             <h1 style="color: white; margin: 0; font-size: 26px;">MINISTERIO DE TRANSPORTES Y COMUNICACIONES</h1>
@@ -190,27 +210,7 @@ if not st.session_state.logged_in:
         </div>
     """, unsafe_allow_html=True)
 
-    col_title, col_links = st.columns([3, 1])
-    with col_title:
-        st.markdown("### 🌐 Plataforma de Monitoreo y Gestión de Solicitudes de Recursos Financieros")
-    with col_links:
-        html_transp = f'<img src="data:image/png;base64,{img_transp_b64}" style="height: 35px; width: auto; border-radius: 4px;" alt="Consulta Amigable"/>' if img_transp_b64 else '<span style="font-size: 13px; font-weight: bold; color: #0b4f8a;">Consulta Amigable</span>'
-        html_transf = f'<img src="data:image/png;base64,{img_transf_b64}" style="height: 35px; width: auto; border-radius: 4px;" alt="Consulta Transferencia"/>' if img_transf_b64 else '<span style="font-size: 13px; font-weight: bold; color: #0b4f8a;">Consulta Transferencia</span>'
-
-        st.markdown(
-            f"""
-            <div style="text-align: right; padding-top: 5px; display: flex; justify-content: flex-end; gap: 15px; align-items: center;">
-                <a href="https://apps5.mineco.gob.pe/transparencia/Navegador/default.aspx?y=2026&ap=Actividad" target="_blank" title="Consulta Amigable MEF">
-                    {html_transp}
-                </a>
-                <a href="https://apps5.mineco.gob.pe/transferencias/gl/default.aspx" target="_blank" title="Consulta de Transferencias MEF">
-                    {html_transf}
-                </a>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-
+    st.markdown("### 🌐 Plataforma de Monitoreo y Gestión de Solicitudes de Recursos Financieros")
     st.write("Sistema informático orientado al seguimiento, control de estados y tramitación de recursos para el mantenimiento rutinario de caminos vecinales a nivel nacional.")
     st.markdown("<br>", unsafe_allow_html=True)
     
