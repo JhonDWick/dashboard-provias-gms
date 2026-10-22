@@ -10,7 +10,7 @@ st.set_page_config(
     layout="wide"
 )
 
-# Estilos CSS Profesionales e Institucionales (Con tarjetas de KPI de tamaño uniforme)
+# Estilos CSS Profesionales e Institucionales (Tarjetas KPI Uniformes)
 st.markdown("""
     <style>
     .header-container {
@@ -115,7 +115,7 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# BARRA LATERAL (MENÚ Y FILTRADO OBLIGATORIO POR PROVINCIA ASIGNADA)
+# BARRA LATERAL (MENÚ Y FILTROS)
 st.sidebar.markdown(f"👤 **{user['nombre']}**")
 st.sidebar.markdown(f"📌 *{user['rol']}*")
 if user["rol"] == "ESPECIALISTA_ZONAL":
@@ -169,7 +169,7 @@ with c7: st.markdown(f'<div class="kpi-card"><div class="kpi-title">Aprobadas/Tr
 
 st.markdown("<br>", unsafe_allow_html=True)
 
-# BANDEJA DE TRABAJO
+# BANDEJA DE TRABAJO PRINCIPAL
 st.markdown("### 📋 Bandeja de Trabajo - Monitoreo y Seguimiento")
 st.dataframe(df_f, use_container_width=True)
 
@@ -180,6 +180,21 @@ with col_ex2:
     st.download_button("📥 Exportar Reporte (CSV)", data=csv_data, file_name=f"Reporte_Provincia_{sel_prov}.csv", mime="text/csv")
 
 st.markdown("---")
+
+# MÓDULO EXCLUSIVO PARA SEDE CENTRAL: BANDEJA DE ACTUALIZACIONES ZONALES
+if user["rol"] == "SEDE_CENTRAL":
+    st.markdown("### 🔔 Bandeja de Actualizaciones Recientes de Unidades Zonales")
+    st.info("Monitoreo en tiempo real de los trámites que registran avances, opiniones favorables u observaciones en las regiones.")
+    
+    # Filtrar trámites que han tenido movimiento zonal reciente o relevante
+    df_actualizaciones = df.copy()
+    if "Fecha_Opinion_Zonal" in df_actualizaciones.columns:
+        df_actualizaciones = df_actualizaciones.sort_values(by="Fecha_Opinion_Zonal", ascending=False)
+    
+    st.dataframe(
+        df_actualizaciones[["HT", "Region", "Provincia", "Servicio", "Estado_Zonal", "Fecha_Opinion_Zonal", "Estado_GMS"]].head(10),
+        use_container_width=True
+    )
 
 # SECCIÓN EXCLUSIVA PARA EL ESPECIALISTA ZONAL (NUEVOS TRÁMITES Y ESTADOS)
 if user["rol"] == "ESPECIALISTA_ZONAL":
