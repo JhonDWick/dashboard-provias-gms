@@ -324,24 +324,34 @@ if user["rol"] == "ESPECIALISTA_ZONAL":
 
     st.markdown("---")
 
-# 1.1. GESTIÓN SEDE CENTRAL (SI ES SEDE CENTRAL) - FILTRADO ESTRICTO DE HT PENDIENTES DE VALIDACIÓN CON OPINIÓN FAVORABLE
+# 1.1. GESTIÓN SEDE CENTRAL (SI ES SEDE CENTRAL) - MUESTRA HT, PROVINCIA Y MES
 if user["rol"] == "SEDE_CENTRAL":
     st.markdown("### 🏛️ Gestión Sede Central: Validación y Actualización de Estados GMS")
     
-    # Filtrar solo HT que tengan "Opinión favorable" y NO estén "Validado"
     df_pendientes_validacion = pd.DataFrame()
     if not df.empty and "Estado_Zonal" in df.columns and "Estado_GMS" in df.columns:
         cond_opinion = df["Estado_Zonal"].astype(str).str.strip().str.lower() == "opinión favorable"
         cond_no_validado = df["Estado_GMS"].astype(str).str.strip().str.lower() != "validado"
         df_pendientes_validacion = df[cond_opinion & cond_no_validado]
     
-    ht_validables = df_pendientes_validacion["HT"].tolist() if not df_pendientes_validacion.empty else []
+    # Crear diccionario y lista con formato: HT — Provincia (Mes)
+    ht_mapping = {}
+    if not df_pendientes_validacion.empty:
+        for _, row in df_pendientes_validacion.iterrows():
+            ht_val = str(row["HT"])
+            prov_val = str(row.get("Provincia", "Sin Provincia"))
+            mes_val = str(row.get("Mes", "Sin Mes"))
+            label_opcion = f"{ht_val} — {prov_val} ({mes_val})"
+            ht_mapping[label_opcion] = ht_val
+
+    lista_opciones_ht = list(ht_mapping.keys())
     
     with st.form("form_gms_central"):
         col_c1, col_c2, col_c3 = st.columns(3)
         with col_c1:
-            if ht_validables:
-                ht_sel_central = st.selectbox("Seleccionar Código HT a Validar:", ht_validables)
+            if lista_opciones_ht:
+                sel_label = st.selectbox("Seleccionar Código HT a Validar:", lista_opciones_ht)
+                ht_sel_central = ht_mapping[sel_label]
             else:
                 st.selectbox("Seleccionar Código HT a Validar:", ["No hay HT con opinión favorable pendientes"])
                 ht_sel_central = None
@@ -351,7 +361,7 @@ if user["rol"] == "SEDE_CENTRAL":
             fec_gms = st.date_input("Fecha de Validación Central", date.today())
             
         btn_gms = st.form_submit_button("🛡️ Actualizar Estado GMS en Sede Central")
-        if btn_gms and ht_sel_central and ht_sel_central != "No hay HT con opinión favorable pendientes":
+        if btn_gms and ht_sel_central:
             st.success(f"¡La Hoja de Trámite {ht_sel_central} fue actualizada a '{nuevo_est_gms}' por Sede Central con éxito!")
 
     st.markdown("---")
