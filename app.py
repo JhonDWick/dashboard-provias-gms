@@ -324,21 +324,34 @@ if user["rol"] == "ESPECIALISTA_ZONAL":
 
     st.markdown("---")
 
-# 1.1. GESTIÓN SEDE CENTRAL (SI ES SEDE CENTRAL)
+# 1.1. GESTIÓN SEDE CENTRAL (SI ES SEDE CENTRAL) - FILTRADO ESTRICTO DE HT PENDIENTES DE VALIDACIÓN CON OPINIÓN FAVORABLE
 if user["rol"] == "SEDE_CENTRAL":
     st.markdown("### 🏛️ Gestión Sede Central: Validación y Actualización de Estados GMS")
+    
+    # Filtrar solo HT que tengan "Opinión favorable" y NO estén "Validado"
+    df_pendientes_validacion = pd.DataFrame()
+    if not df.empty and "Estado_Zonal" in df.columns and "Estado_GMS" in df.columns:
+        cond_opinion = df["Estado_Zonal"].astype(str).str.strip().str.lower() == "opinión favorable"
+        cond_no_validado = df["Estado_GMS"].astype(str).str.strip().str.lower() != "validado"
+        df_pendientes_validacion = df[cond_opinion & cond_no_validado]
+    
+    ht_validables = df_pendientes_validacion["HT"].tolist() if not df_pendientes_validacion.empty else []
     
     with st.form("form_gms_central"):
         col_c1, col_c2, col_c3 = st.columns(3)
         with col_c1:
-            ht_sel_central = st.selectbox("Seleccionar Código HT a Validar:", df_f["HT"].tolist() if not df_f.empty else [])
+            if ht_validables:
+                ht_sel_central = st.selectbox("Seleccionar Código HT a Validar:", ht_validables)
+            else:
+                st.selectbox("Seleccionar Código HT a Validar:", ["No hay HT con opinión favorable pendientes"])
+                ht_sel_central = None
         with col_c2:
             nuevo_est_gms = st.selectbox("Estado GMS:", ["En revisión GMS", "Validado", "Observado GMS"])
         with col_c3:
             fec_gms = st.date_input("Fecha de Validación Central", date.today())
             
         btn_gms = st.form_submit_button("🛡️ Actualizar Estado GMS en Sede Central")
-        if btn_gms and ht_sel_central:
+        if btn_gms and ht_sel_central and ht_sel_central != "No hay HT con opinión favorable pendientes":
             st.success(f"¡La Hoja de Trámite {ht_sel_central} fue actualizada a '{nuevo_est_gms}' por Sede Central con éxito!")
 
     st.markdown("---")
