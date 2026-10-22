@@ -135,34 +135,11 @@ def cargar_datos():
 
 df = cargar_datos()
 
-# Diccionario oficial de mapeo de Especialistas por Provincia
-MAPEO_ESPECIALISTAS = {
-    "ACOBAMBA": "José Parra Benavides",
-    "ANGARAES": "Edgar Vásquez Rivera",
-    "CHURCAMPA": "Edgar Vásquez Rivera",
-    "CASTROVIRREYNA": "Jhon Ponce Francia",
-    "HUAYTARÁ": "Jhon Ponce Francia",
-    "HUANCAVELICA": "Jaqueline Carhuaricra",
-    "TAYACAJA": "Randolf León Rojas",
-    "TACNA": "Alexa Torres Flores",
-    "CANDARAVE": "Alexa Torres Flores",
-    "TARATA": "Alexa Torres Flores",
-    "JORGE BASADRE": "Alexa Torres Flores",
-    "MARISCAL NIETO": "Luis Ortiz Fonttis",
-    "ILO": "Luis Ortiz Fonttis",
-    "GENERAL SANCHEZ CERRO": "Luis Ortiz Fonttis"
-}
-
-def asignar_especialista(prov):
-    prov_limpia = str(prov).strip().upper()
-    return MAPEO_ESPECIALISTAS.get(prov_limpia, "Sede Central")
-
+# Formatear columna Provincia
 if not df.empty and "Provincia" in df.columns:
-    df["Especialista_Nombre"] = df["Provincia"].apply(asignar_especialista)
-    # Crear etiqueta combinada con Especialista y Provincia exacta
-    df["Especialista_Provincia"] = df["Especialista_Nombre"] + " - " + df["Provincia"].astype(str).str.title()
+    df["Provincia_Formateada"] = df["Provincia"].astype(str).str.strip().str.title()
 else:
-    df["Especialista_Provincia"] = "Sin información"
+    df["Provincia_Formateada"] = "Sin información"
 
 # Función para convertir imágenes locales a Base64
 def img_to_base64(possible_names):
@@ -394,7 +371,7 @@ with col_ex2:
 
 st.markdown("---")
 
-# 5. MÓDULOS INFERIORES (EFICIENCIA CON PROVINCIAS Y MESES ORDENADOS)
+# 5. MÓDULOS INFERIORES (EFICIENCIA POR PROVINCIA Y MES - ALINEADO HORIZONTAL)
 col_inf1, col_inf2 = st.columns(2)
 
 with col_inf1:
@@ -402,27 +379,27 @@ with col_inf1:
     st.info("No se registran solicitudes críticas con exceso de días en la bandeja actual.")
 
 with col_inf2:
-    st.markdown("### 📈 Eficiencia: Trámites por Especialista, Provincia y Mes")
+    st.markdown("### 📈 Eficiencia: Trámites por Provincia y Mes")
     if not df_f.empty and "Mes" in df_f.columns:
         # Definición del orden cronológico estricto de los meses
         ORDEN_MESES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Setiembre", "Septiembre", "Octubre", "Noviembre", "Diciembre"]
         
-        # Agrupar por Especialista + Provincia y por Mes
-        df_eficiencia = df_f.groupby(["Especialista_Provincia", "Mes"], as_index=False)["Num_Tramos"].sum()
+        # Agrupar únicamente por Provincia y por Mes
+        df_eficiencia = df_f.groupby(["Provincia_Formateada", "Mes"], as_index=False)["Num_Tramos"].sum()
         
-        # Asignar categoría ordenada al Mes para garantizar secuencia cronológica
+        # Ordenar cronológicamente
         df_eficiencia["Mes"] = pd.Categorical(df_eficiencia["Mes"], categories=ORDEN_MESES, ordered=True)
         df_eficiencia = df_eficiencia.sort_values("Mes")
         
         fig = px.bar(
             df_eficiencia, 
-            x="Especialista_Provincia", 
+            x="Provincia_Formateada", 
             y="Num_Tramos", 
             color="Mes", 
             barmode="group",
             category_orders={"Mes": ORDEN_MESES},
             labels={
-                "Especialista_Provincia": "Especialista - Provincia", 
+                "Provincia_Formateada": "Provincia", 
                 "Num_Tramos": "Cantidad de Tramos / Trámites",
                 "Mes": "Mes"
             }
@@ -430,7 +407,7 @@ with col_inf2:
         fig.update_layout(
             height=340, 
             margin=dict(l=10, r=10, t=10, b=10),
-            xaxis_tickangle=-20
+            xaxis=dict(tickangle=0)  # Nombres de provincia alineados horizontalmente (sin inclinación)
         )
         st.plotly_chart(fig, use_container_width=True)
     else:
