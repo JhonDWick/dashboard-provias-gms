@@ -11,12 +11,12 @@ st.set_page_config(
     layout="wide"
 )
 
-# Estilos CSS Profesionales e Institucionales (Corrección de visibilidad en botones)
+# Estilos CSS Profesionales e Institucionales (Corrección absoluta de botones y textos en barra lateral)
 st.markdown("""
     <style>
     /* Fondo de infraestructura vial en la barra lateral con capa institucional */
     [data-testid="stSidebar"] {
-        background-image: linear-gradient(rgba(11, 79, 138, 0.90), rgba(11, 79, 138, 0.90)), url("https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?q=80&w=1000&auto=format&fit=crop");
+        background-image: linear-gradient(rgba(11, 79, 138, 0.92), rgba(11, 79, 138, 0.92)), url("https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?q=80&w=1000&auto=format&fit=crop");
         background-size: cover;
         background-position: center;
         color: white;
@@ -24,18 +24,19 @@ st.markdown("""
     [data-testid="stSidebar"] h1, [data-testid="stSidebar"] h2, [data-testid="stSidebar"] h3, [data-testid="stSidebar"] label, [data-testid="stSidebar"] p, [data-testid="stSidebar"] span {
         color: white !important;
     }
-    /* Estilo claro y legible para todos los botones de Streamlit */
+    /* Estilo robusto para los botones con texto oscuro visible */
     .stButton button {
-        background-color: #ffffff !important;
+        background-color: #f8f9fa !important;
         color: #0b4f8a !important;
-        font-weight: bold !important;
-        border: 1px solid #0b4f8a !important;
-        border-radius: 4px !important;
+        font-weight: 700 !important;
+        border: 2px solid #ffffff !important;
+        border-radius: 6px !important;
+        width: 100% !important;
     }
     .stButton button:hover {
-        background-color: #f0f2f5 !important;
+        background-color: #ffffff !important;
         color: #07335c !important;
-        border-color: #07335c !important;
+        border-color: #e0e0e0 !important;
     }
     .header-container {
         background-color: #0b4f8a;
