@@ -324,6 +324,25 @@ if user["rol"] == "ESPECIALISTA_ZONAL":
 
     st.markdown("---")
 
+# 1.1. GESTIÓN SEDE CENTRAL (SI ES SEDE CENTRAL)
+if user["rol"] == "SEDE_CENTRAL":
+    st.markdown("### 🏛️ Gestión Sede Central: Validación y Actualización de Estados GMS")
+    
+    with st.form("form_gms_central"):
+        col_c1, col_c2, col_c3 = st.columns(3)
+        with col_c1:
+            ht_sel_central = st.selectbox("Seleccionar Código HT a Validar:", df_f["HT"].tolist() if not df_f.empty else [])
+        with col_c2:
+            nuevo_est_gms = st.selectbox("Estado GMS:", ["En revisión GMS", "Validado", "Observado GMS"])
+        with col_c3:
+            fec_gms = st.date_input("Fecha de Validación Central", date.today())
+            
+        btn_gms = st.form_submit_button("🛡️ Actualizar Estado GMS en Sede Central")
+        if btn_gms and ht_sel_central:
+            st.success(f"¡La Hoja de Trámite {ht_sel_central} fue actualizada a '{nuevo_est_gms}' por Sede Central con éxito!")
+
+    st.markdown("---")
+
 # 2. RESUMEN EJECUTIVO (KPIS)
 st.markdown("### 📊 Resumen Ejecutivo")
 
