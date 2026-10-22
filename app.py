@@ -10,7 +10,7 @@ st.set_page_config(
     layout="wide"
 )
 
-# Estilos CSS Profesionales e Institucionales
+# Estilos CSS Profesionales e Institucionales (Con tarjetas de KPI de tamaño uniforme)
 st.markdown("""
     <style>
     .header-container {
@@ -35,13 +35,31 @@ st.markdown("""
         background-color: #ffffff;
         border: 1px solid #e0e0e0;
         border-left: 5px solid #0b4f8a;
-        padding: 15px;
+        padding: 12px 8px;
         border-radius: 6px;
         box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         text-align: center;
+        height: 95px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        width: 100%;
     }
-    .kpi-title { font-size: 12px; color: #666; font-weight: bold; text-transform: uppercase; }
-    .kpi-value { font-size: 24px; color: #0b4f8a; font-weight: bold; margin-top: 5px; }
+    .kpi-title { 
+        font-size: 10px; 
+        color: #555; 
+        font-weight: bold; 
+        text-transform: uppercase; 
+        line-height: 1.2;
+        margin-bottom: 4px;
+    }
+    .kpi-value { 
+        font-size: 22px; 
+        color: #0b4f8a; 
+        font-weight: bold; 
+        margin: 0;
+    }
     </style>
 """, unsafe_allow_html=True)
 
@@ -114,7 +132,6 @@ df_f = df.copy()
 
 # APLICAR FILTRO ESTRICTO DE PROVINCIAS SEGÚN EL ROL
 if user["rol"] == "ESPECIALISTA_ZONAL":
-    # Normalizar texto para evitar errores de mayúsculas/minúsculas o tildes
     provincias_usuario = [p.strip().upper() for p in user["provincias"]]
     df_f = df_f[df_f["Provincia"].astype(str).str.strip().str.upper().isin(provincias_usuario)]
 
@@ -124,13 +141,13 @@ sel_reg = st.sidebar.selectbox("Región", regiones)
 if sel_reg != "Todas":
     df_f = df_f[df_f["Region"] == sel_reg]
 
-# Filtro por Provincia (limitado a sus asignadas si es zonal)
+# Filtro por Provincia
 provincias_disponibles = ["Todas"] + sorted(list(df_f["Provincia"].dropna().unique()))
 sel_prov = st.sidebar.selectbox("Provincia", provincias_disponibles)
 if sel_prov != "Todas":
     df_f = df_f[df_f["Provincia"] == sel_prov]
 
-# RESUMEN EJECUTIVO (KPIS)
+# RESUMEN EJECUTIVO (KPIS CON TAMAÑOS UNIFORMES)
 st.markdown("### 📊 Resumen Ejecutivo")
 
 total_s = len(df_f)
@@ -176,7 +193,6 @@ if user["rol"] == "ESPECIALISTA_ZONAL":
             with col_f1:
                 num_ht = st.text_input("Número de HT (ej. E-050000-2026)")
                 reg_ing = st.selectbox("Región", sorted(list(df["Region"].dropna().unique())))
-                # Solo permite seleccionar las provincias asignadas a su cargo
                 prov_ing = st.selectbox("Provincia Asignada", user["provincias"])
             with col_f2:
                 serv_ing = st.text_input("Servicio / Obra", "Mantenimiento Rutinario")
