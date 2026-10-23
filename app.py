@@ -130,7 +130,7 @@ st.markdown("""
 # URL e Identificador del Google Sheets
 SHEET_ID = "1v2Nc7v7JNB2IVFqhXM81WVJvaJgiuh31HNA68WwbOlI"
 
-# CONEXIÓN BLINDADA CON LIMPIEZA EXHAUSTIVA DE PEM / ESCAPES
+# CONEXIÓN BLINDADA CON DECODIFICACIÓN UNIVERSAL DE LLAVE PRIVADA
 @st.cache_resource
 def conectar_google_sheets():
     try:
@@ -144,12 +144,18 @@ def conectar_google_sheets():
         elif "gcp_service_account" in st.secrets:
             creds_dict = dict(st.secrets["gcp_service_account"])
         else:
+            st.error("❌ No se encontró la configuración de credenciales en st.secrets.")
             return None
             
-        # Corrección profunda de la llave privada (elimina \\n y símbolos inválidos)
+        # Limpieza y conversión universal de la llave privada
         if "private_key" in creds_dict:
             pk = creds_dict["private_key"]
+            # Reemplazos exhaustivos para eliminar cualquier conflicto de barras
             pk = pk.replace("\\\\n", "\n").replace("\\n", "\n")
+            try:
+                pk = bytes(pk, "utf-8").decode("unicode_escape")
+            except Exception:
+                pass
             creds_dict["private_key"] = pk
             
         with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".json") as f:
