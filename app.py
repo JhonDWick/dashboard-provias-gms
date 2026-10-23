@@ -93,29 +93,17 @@ st.markdown("""
         font-weight: bold; 
         margin: 0;
     }
-    .welcome-card {
+    .welcome-card-header {
         background-color: #f8f9fa;
         border: 1px solid #e0e0e0;
         border-top: 4px solid #dc2626;
-        padding: 22px 18px;
-        border-radius: 8px;
+        padding: 10px;
+        border-radius: 8px 8px 0 0;
         text-align: center;
-        height: 200px;
-        display: flex;
-        flex-direction: column;
-        justify-content: flex-start;
-        align-items: center;
     }
-    .welcome-card h4 {
-        font-size: 16px;
+    .welcome-card-header h4 {
+        font-size: 15px;
         color: #dc2626;
-        margin-bottom: 10px;
-        margin-top: 0;
-    }
-    .welcome-card p {
-        font-size: 13px;
-        color: #555;
-        line-height: 1.4;
         margin: 0;
     }
     </style>
@@ -220,45 +208,64 @@ if not st.session_state.logged_in:
     st.write("Sistema informático orientado al seguimiento, control de estados y tramitación de recursos para el mantenimiento rutinario de caminos vecinales a nivel nacional.")
     st.markdown("<br>", unsafe_allow_html=True)
     
-    # Tarjetas de bienvenida interactivas con métricas en tiempo real
-    total_general = len(df) if not df.empty else 0
-    validadas_gms = len(df[df["Estado_GMS"].astype(str).str.lower() == "validado"]) if not df.empty else 0
-    
+    # ----------------------------------------------------
+    # TARJETAS DE BIENVENIDA CON GRÁFICOS REALES PLOTLY
+    # ----------------------------------------------------
     col_w1, col_w2, col_w3 = st.columns(3)
+    
+    # GRÁFICO 1: Cobertura por Región (Barras horizontales)
     with col_w1:
-        st.markdown("""
-            <div class="welcome-card">
-                <h4>🛣️ Cobertura Zonal</h4>
-                <p>Supervisión descentralizada en <b>3 Regiones clave</b>:</p>
-                <ul style="text-align: left; font-size: 12px; color: #555; margin-top: 4px; padding-left: 15px;">
-                    <li>Huancavelica (6 Provincias)</li>
-                    <li>Tacna (4 Provincias)</li>
-                    <li>Moquegua (3 Provincias)</li>
-                </ul>
-            </div>
-        """, unsafe_allow_html=True)
+        st.markdown('<div class="welcome-card-header"><h4>🛣️ Cobertura Zonal</h4></div>', unsafe_allow_html=True)
+        if not df.empty and "Region" in df.columns:
+            df_reg = df.groupby("Region", as_index=False).size()
+            df_reg.columns = ["Región", "Solicitudes"]
+            fig_w1 = px.bar(
+                df_reg, x="Solicitudes", y="Región", orientation="h",
+                color_discrete_sequence=["#dc2626"], text="Solicitudes"
+            )
+            fig_w1.update_layout(
+                height=180, margin=dict(l=5, r=5, t=10, b=10),
+                xaxis_title="", yaxis_title="", showlegend=False
+            )
+            st.plotly_chart(fig_w1, use_container_width=True)
+        else:
+            st.info("Cargando cobertura zonal...")
+
+    # GRÁFICO 2: Trazabilidad en Línea (Gráfico de Dona por Estado Zonal)
     with col_w2:
-        st.markdown(f"""
-            <div class="welcome-card">
-                <h4>📊 Trazabilidad en Línea</h4>
-                <p>Estado global del repositorio en tiempo real:</p>
-                <div style="margin-top: 14px;">
-                    <span style="font-size: 24px; font-weight: bold; color: #dc2626;">{total_general}</span><br>
-                    <span style="font-size: 11px; color: #666; text-transform: uppercase;">Total Trámites Registrados</span>
-                </div>
-            </div>
-        """, unsafe_allow_html=True)
+        st.markdown('<div class="welcome-card-header"><h4>📊 Trazabilidad en Línea</h4></div>', unsafe_allow_html=True)
+        if not df.empty and "Estado_Zonal" in df.columns:
+            df_est_z = df.groupby("Estado_Zonal", as_index=False).size()
+            df_est_z.columns = ["Estado", "Cantidad"]
+            fig_w2 = px.pie(
+                df_est_z, values="Cantidad", names="Estado", hole=0.5,
+                color_discrete_sequence=["#dc2626", "#2563eb", "#f59e0b"]
+            )
+            fig_w2.update_layout(
+                height=180, margin=dict(l=5, r=5, t=10, b=10),
+                showlegend=True, legend=dict(orientation="h", y=-0.2)
+            )
+            st.plotly_chart(fig_w2, use_container_width=True)
+        else:
+            st.info("Cargando estados zonales...")
+
+    # GRÁFICO 3: Estado de Validaciones GMS (Gráfico de Anillo Central)
     with col_w3:
-        st.markdown(f"""
-            <div class="welcome-card">
-                <h4>👥 Acceso por Roles</h4>
-                <p>Control de flujo seguro y transparente:</p>
-                <div style="margin-top: 14px;">
-                    <span style="font-size: 24px; font-weight: bold; color: #dc2626;">{validadas_gms}</span><br>
-                    <span style="font-size: 11px; color: #666; text-transform: uppercase;">Trámites Validados GMS</span>
-                </div>
-            </div>
-        """, unsafe_allow_html=True)
+        st.markdown('<div class="welcome-card-header"><h4>👥 Validaciones GMS</h4></div>', unsafe_allow_html=True)
+        if not df.empty and "Estado_GMS" in df.columns:
+            df_est_gms = df.groupby("Estado_GMS", as_index=False).size()
+            df_est_gms.columns = ["Estado GMS", "Cantidad"]
+            fig_w3 = px.pie(
+                df_est_gms, values="Cantidad", names="Estado GMS", hole=0.5,
+                color_discrete_sequence=["#16a34a", "#dc2626", "#6b7280"]
+            )
+            fig_w3.update_layout(
+                height=180, margin=dict(l=5, r=5, t=10, b=10),
+                showlegend=True, legend=dict(orientation="h", y=-0.2)
+            )
+            st.plotly_chart(fig_w3, use_container_width=True)
+        else:
+            st.info("Cargando validaciones GMS...")
 
     st.markdown("<br><br>", unsafe_allow_html=True)
     st.info("👈 **Instrucción:** Por favor, ingrese su usuario y contraseña asignados en el panel lateral izquierdo para acceder al sistema.")
