@@ -11,12 +11,12 @@ st.set_page_config(
     layout="wide"
 )
 
-# Estilos CSS Profesionales e Institucionales
+# Estilos CSS Profesionales con la nueva Paleta Institucional Roja (Estilo MTC / Provías)
 st.markdown("""
     <style>
-    /* Fondo de infraestructura vial en la barra lateral con capa institucional */
+    /* Fondo de infraestructura vial en la barra lateral con capa institucional roja */
     [data-testid="stSidebar"] {
-        background-image: linear-gradient(rgba(11, 79, 138, 0.92), rgba(11, 79, 138, 0.92)), url("https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?q=80&w=1000&auto=format&fit=crop");
+        background-image: linear-gradient(rgba(220, 38, 38, 0.94), rgba(185, 28, 28, 0.94)), url("https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?q=80&w=1000&auto=format&fit=crop");
         background-size: cover;
         background-position: center;
         color: white;
@@ -25,7 +25,7 @@ st.markdown("""
         color: white !important;
     }
     
-    /* FORZAR COLOR OSCURO EN TODO TEXTO O ELEMENTO DENTRO DE LOS BOTONES */
+    /* FORZAR COLOR ROJO EN TEXTOS DE BOTONES Y BORDES */
     div.stButton > button {
         background-color: #ffffff !important;
         border: 2px solid #ffffff !important;
@@ -34,20 +34,20 @@ st.markdown("""
         height: 42px !important;
     }
     div.stButton > button * {
-        color: #0b4f8a !important;
+        color: #dc2626 !important;
         font-weight: 800 !important;
         font-size: 15px !important;
     }
     div.stButton > button:hover {
-        background-color: #e2e8f0 !important;
-        border-color: #e2e8f0 !important;
+        background-color: #ffeeef !important;
+        border-color: #ffeeef !important;
     }
     div.stButton > button:hover * {
-        color: #072e52 !important;
+        color: #991b1b !important;
     }
 
     .header-container {
-        background-color: #0b4f8a;
+        background-color: #dc2626;
         padding: 12px 20px;
         border-radius: 6px;
         color: white;
@@ -67,7 +67,7 @@ st.markdown("""
     .kpi-card {
         background-color: #ffffff;
         border: 1px solid #e0e0e0;
-        border-left: 5px solid #0b4f8a;
+        border-left: 5px solid #dc2626;
         padding: 12px 8px;
         border-radius: 6px;
         box-shadow: 0 1px 3px rgba(0,0,0,0.05);
@@ -89,14 +89,14 @@ st.markdown("""
     }
     .kpi-value { 
         font-size: 22px; 
-        color: #0b4f8a; 
+        color: #dc2626; 
         font-weight: bold; 
         margin: 0;
     }
     .welcome-card {
         background-color: #f8f9fa;
         border: 1px solid #e0e0e0;
-        border-top: 4px solid #0b4f8a;
+        border-top: 4px solid #dc2626;
         padding: 22px 18px;
         border-radius: 8px;
         text-align: center;
@@ -108,7 +108,7 @@ st.markdown("""
     }
     .welcome-card h4 {
         font-size: 16px;
-        color: #0b4f8a;
+        color: #dc2626;
         margin-bottom: 10px;
         margin-top: 0;
     }
@@ -210,9 +210,9 @@ if not st.session_state.logged_in:
     )
     
     st.markdown("""
-        <div style="background-color: #0b4f8a; padding: 25px; border-radius: 8px; color: white; text-align: center; margin-bottom: 25px;">
+        <div style="background-color: #dc2626; padding: 25px; border-radius: 8px; color: white; text-align: center; margin-bottom: 25px;">
             <h1 style="color: white; margin: 0; font-size: 26px;">MINISTERIO DE TRANSPORTES Y COMUNICACIONES</h1>
-            <h3 style="color: #e0e0e0; margin-top: 8px; font-weight: normal; font-size: 18px;">PROVÍAS DESCENTRALIZADO — GERENCIA DE MONITOREO Y SEGUIMIENTO (GMS)</h3>
+            <h3 style="color: #fef2f2; margin-top: 8px; font-weight: normal; font-size: 18px;">PROVÍAS DESCENTRALIZADO — GERENCIA DE MONITOREO Y SEGUIMIENTO (GMS)</h3>
         </div>
     """, unsafe_allow_html=True)
 
@@ -445,7 +445,7 @@ if user["rol"] == "SEDE_CENTRAL":
         fig.update_layout(
             height=450, 
             margin=dict(l=10, r=10, t=10, b=50),
-            xaxis=dict(tickangle=90)  # Provincias a 90° para Sede Central
+            xaxis=dict(tickangle=90)
         )
         st.plotly_chart(fig, use_container_width=True)
     else:
