@@ -127,7 +127,7 @@ st.markdown("""
 # URL e Identificador del Google Sheets
 SHEET_ID = "1v2Nc7v7JNB2IVFqhXM81WVJvaJgiuh31HNA68WwbOlI"
 
-# CONEXIÓN CON GSPREAD VÍA STREAMLIT SECRETS (CON CORRECCIÓN DE LLAVE PRIVADA)
+# CONEXIÓN CON GSPREAD VÍA STREAMLIT SECRETS (VERSIÓN DEFINITIVA)
 @st.cache_resource
 def conectar_google_sheets():
     try:
@@ -135,11 +135,15 @@ def conectar_google_sheets():
             "https://www.googleapis.com/auth/spreadsheets",
             "https://www.googleapis.com/auth/drive"
         ]
-        credentials_dict = dict(st.secrets["gcp_service_account"])
-        if "private_key" in credentials_dict:
-            credentials_dict["private_key"] = credentials_dict["private_key"].replace("\\n", "\n")
-
-        creds = Credentials.from_service_account_info(credentials_dict, scopes=scope)
+        
+        # Leemos directamente el diccionario de secretos de GCP
+        creds_dict = dict(st.secrets["gcp_service_account"])
+        
+        # Aseguramos que los saltos de línea de la llave privada se interpreten correctamente
+        if "private_key" in creds_dict:
+            creds_dict["private_key"] = creds_dict["private_key"].replace("\\n", "\n")
+            
+        creds = Credentials.from_service_account_info(creds_dict, scopes=scope)
         client = gspread.authorize(creds)
         sheet = client.open_by_key(SHEET_ID).worksheet("BD")
         return sheet
