@@ -130,7 +130,7 @@ st.markdown("""
 # URL e Identificador del Google Sheets
 SHEET_ID = "1v2Nc7v7JNB2IVFqhXM81WVJvaJgiuh31HNA68WwbOlI"
 
-# CONEXIÓN DIRECTA Y SEGURA
+# CONEXIÓN BLINDADA APUNTANDO A LA PESTAÑA CORRECTA "Base_Datos"
 @st.cache_resource
 def conectar_google_sheets():
     try:
@@ -154,7 +154,7 @@ def conectar_google_sheets():
             
         creds = Credentials.from_service_account_file(temp_filename, scopes=scope)
         client = gspread.authorize(creds)
-        sheet = client.open_by_key(SHEET_ID).worksheet("BD")
+        sheet = client.open_by_key(SHEET_ID).worksheet("Base_Datos")
         os.unlink(temp_filename)
         return sheet
     except Exception:
@@ -169,7 +169,7 @@ def cargar_datos():
             data = sheet_bd.get_all_records()
             if data:
                 return pd.DataFrame(data)
-        CSV_URL = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=BD"
+        CSV_URL = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Base_Datos"
         return pd.read_csv(CSV_URL)
     except Exception:
         return pd.DataFrame()
@@ -401,7 +401,7 @@ if user["rol"] == "ESPECIALISTA_ZONAL":
                             st.success(f"¡Solicitud {num_ht} registrada con éxito en Google Sheets para {prov_ing}!")
                             st.rerun()
                         else:
-                            st.warning("⚠️ Los datos se procesaron localmente. Verifique el acceso a la hoja de cálculo para la sincronización remota.")
+                            st.warning("⚠️ Los datos se procesaron localmente. Verifique el acceso a la hoja de cálculo.")
                     except Exception as err:
                         st.error(f"Error al registrar: {err}")
                 else:
