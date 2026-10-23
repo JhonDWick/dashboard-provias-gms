@@ -127,10 +127,14 @@ st.markdown("""
 # URL e Identificador del Google Sheets
 SHEET_ID = "1v2Nc7v7JNB2IVFqhXM81WVJvaJgiuh31HNA68WwbOlI"
 
-# CONEXIÓN CON GSPREAD VÍA STREAMLIT SECRETS (ESTÁNDAR NATIVO)
+# CONEXIÓN CON GSPREAD MEDIANTE ARCHIVO TEMPORAL (EVITA ERRORES ASN.1 Y PEM)
 @st.cache_resource
 def conectar_google_sheets():
     try:
+        import tempfile
+        import os
+        import json
+        
         scope = [
             "https://www.googleapis.com/auth/spreadsheets",
             "https://www.googleapis.com/auth/drive"
@@ -140,9 +144,15 @@ def conectar_google_sheets():
         if "private_key" in credentials_dict:
             credentials_dict["private_key"] = credentials_dict["private_key"].replace("\\n", "\n")
             
-        creds = Credentials.from_service_account_info(credentials_dict, scopes=scope)
+        with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".json") as f:
+            json.dump(credentials_dict, f)
+            temp_filename = f.name
+            
+        creds = Credentials.from_service_account_file(temp_filename, scopes=scope)
         client = gspread.authorize(creds)
         sheet = client.open_by_key(SHEET_ID).worksheet("BD")
+        
+        os.unlink(temp_filename)
         return sheet
     except Exception as e:
         st.error(f"❌ ERROR EXACTO DE CONEXIÓN: {e}")
