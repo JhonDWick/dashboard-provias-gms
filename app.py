@@ -3,11 +3,8 @@ import pandas as pd
 import plotly.express as px
 from datetime import datetime, date
 import base64
-import tempfile
-import os
-import json
-import gspread
-from google.oauth2.service_account import Credentials
+import requests
+import io
 
 # Configuración de página con diseño ancho
 st.set_page_config(
@@ -130,50 +127,14 @@ st.markdown("""
 # URL e Identificador del Google Sheets
 SHEET_ID = "1v2Nc7v7JNB2IVFqhXM81WVJvaJgiuh31HNA68WwbOlI"
 
-# CONEXIÓN CON GSPREAD MEDIANTE ARCHIVO TEMPORAL Y LIMPIEZA DE LLAVE PEM
-@st.cache_resource
-def conectar_google_sheets():
-    try:
-        scope = [
-            "https://www.googleapis.com/auth/spreadsheets",
-            "https://www.googleapis.com/auth/drive"
-        ]
-        
-        credentials_dict = dict(st.secrets["gcp_service_account"])
-        
-        # Limpieza exhaustiva de saltos de línea en la llave privada
-        if "private_key" in credentials_dict:
-            pk = credentials_dict["private_key"]
-            pk = pk.replace("\\\\n", "\n").replace("\\n", "\n")
-            credentials_dict["private_key"] = pk
-            
-        # Creamos un archivo JSON temporal seguro en el servidor de Streamlit
-        with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".json") as f:
-            json.dump(credentials_dict, f)
-            temp_filename = f.name
-            
-        creds = Credentials.from_service_account_file(temp_filename, scopes=scope)
-        client = gspread.authorize(creds)
-        sheet = client.open_by_key(SHEET_ID).worksheet("BD")
-        
-        os.unlink(temp_filename)
-        return sheet
-    except Exception as e:
-        st.error(f"❌ ERROR EXACTO DE CONEXIÓN: {e}")
-        return None
-
-sheet_bd = conectar_google_sheets()
-
 @st.cache_data(ttl=5)
 def cargar_datos():
     try:
-        if sheet_bd:
-            data = sheet_bd.get_all_records()
-            return pd.DataFrame(data)
-        else:
-            CSV_URL = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=BD"
-            return pd.read_csv(CSV_URL)
+        CSV_URL = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=BD"
+        df_loaded = pd.read_csv(CSV_URL)
+        return df_loaded
     except Exception as e:
+        st.error(f"❌ Error al cargar los datos de Google Sheets: {e}")
         return pd.DataFrame()
 
 df = cargar_datos()
@@ -367,119 +328,17 @@ if sel_prov != "Todas":
     df_f = df_f[df_f["Provincia"] == sel_prov]
 
 if user["rol"] == "ESPECIALISTA_ZONAL":
-    st.markdown("### ➕ Gestión Zonal: Registrar Nueva Solicitud o Actualizar Estado")
-    
-    tab_nuevo, tab_actualizar = st.tabs(["📝 Registrar Nueva Solicitud", "✏️ Actualizar Estado de Trámite"])
-    
-    with tab_nuevo:
-        with st.form("form_nueva_solicitud"):
-            col_f1, col_f2, col_f3 = st.columns(3)
-            with col_f1:
-                num_ht = st.text_input("Número de HT (ej. E-050000-2026)")
-                regiones_permitidas = user.get("regiones", sorted(list(df["Region"].dropna().unique())))
-                reg_ing = st.selectbox("Región", regiones_permitidas)
-                prov_ing = st.selectbox("Provincia Asignada", user["provincias"])
-            with col_f2:
-                serv_ing = st.text_input("Servicio / Obra", "Mantenimiento Rutinario")
-                num_tram = st.number_input("Número de Tramos", min_value=1, value=1)
-                mes_ing = st.selectbox("Mes", ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Setiembre", "Octubre", "Noviembre", "Diciembre"])
-            with col_f3:
-                tipo_t = st.selectbox("Tipo de Trámite", ["Solicitud de recursos", "Recursos RNU"])
-                estado_z = st.selectbox("Estado Zonal", ["En revisión", "Opinión favorable", "Observado"])
-                fec_ing = st.date_input("Fecha Ingreso Zonal", date.today())
-                
-            btn_guardar = st.form_submit_button("💾 Guardar Solicitud en la Zonal")
-            if btn_guardar:
-                if num_ht and sheet_bd:
-                    try:
-                        nueva_fila = [
-                            num_ht, reg_ing, prov_ing, serv_ing, int(num_tram), mes_ing,
-                            fec_ing.strftime("%d/%m/%Y"), "", "", "", "", estado_z, "En revisión GMS"
-                        ]
-                        sheet_bd.append_row(nueva_fila)
-                        st.cache_data.clear()
-                        st.success(f"¡Solicitud {num_ht} registrada con éxito en Google Sheets para la provincia de {prov_ing} ({reg_ing})!")
-                        st.rerun()
-                    except Exception as err:
-                        st.error(f"Error al escribir en Google Sheets: {err}")
-                else:
-                    st.warning("Por favor complete el código HT o verifique la conexión con Google Sheets.")
-    
-    with tab_actualizar:
-        with st.form("form_act_estado"):
-            ht_sel = st.selectbox("Seleccione Código HT a modificar:", df_f["HT"].tolist() if not df_f.empty else [])
-            nuevo_est_z = st.selectbox("Nuevo Estado Zonal:", ["En revisión", "Opinión favorable", "Observado"])
-            btn_act = st.form_submit_button("🔄 Actualizar Estado Zonal")
-            if btn_act and ht_sel and sheet_bd:
-                try:
-                    cell = sheet_bd.find(ht_sel)
-                    if cell:
-                        sheet_bd.update_cell(cell.row, 12, nuevo_est_z)
-                        st.cache_data.clear()
-                        st.success(f"¡El estado zonal de la HT {ht_sel} fue actualizado a '{nuevo_est_z}' en Google Sheets!")
-                        st.rerun()
-                except Exception as err:
-                    st.error(f"Error al actualizar estado en Google Sheets: {err}")
-
-    st.markdown("---")
-
-if user["rol"] == "SEDE_CENTRAL":
-    st.markdown("### 🏛️ Gestión Sede Central: Validación y Actualización de Estados GMS")
-    
-    df_pendientes_validacion = pd.DataFrame()
-    if not df.empty and "Estado_Zonal" in df.columns and "Estado_GMS" in df.columns:
-        cond_opinion = df["Estado_Zonal"].astype(str).str.strip().str.lower() == "opinión favorable"
-        cond_no_validado = df["Estado_GMS"].astype(str).str.strip().str.lower() != "validado"
-        df_pendientes_validacion = df[cond_opinion & cond_no_validado]
-    
-    ht_mapping = {}
-    if not df_pendientes_validacion.empty:
-        for _, row in df_pendientes_validacion.iterrows():
-            ht_val = str(row["HT"])
-            prov_val = str(row.get("Provincia", "Sin Provincia"))
-            mes_val = str(row.get("Mes", "Sin Mes"))
-            label_opcion = f"{ht_val} — {prov_val} ({mes_val})"
-            ht_mapping[label_opcion] = ht_val
-
-    lista_opciones_ht = list(ht_mapping.keys())
-    
-    with st.form("form_gms_central"):
-        col_c1, col_c2, col_c3 = st.columns(3)
-        with col_c1:
-            if lista_opciones_ht:
-                sel_label = st.selectbox("Seleccionar Código HT a Validar:", lista_opciones_ht)
-                ht_sel_central = ht_mapping[sel_label]
-            else:
-                st.selectbox("Seleccionar Código HT a Validar:", ["No hay HT con opinión favorable pendientes"])
-                ht_sel_central = None
-        with col_c2:
-            nuevo_est_gms = st.selectbox("Estado GMS:", ["En revisión GMS", "Validado", "Observado GMS"])
-        with col_c3:
-            fec_gms = st.date_input("Fecha de Validación Central", date.today())
-            
-        btn_gms = st.form_submit_button("🛡️ Actualizar Estado GMS en Sede Central")
-        if btn_gms and ht_sel_central and sheet_bd:
-            try:
-                cell = sheet_bd.find(ht_sel_central)
-                if cell:
-                    sheet_bd.update_cell(cell.row, 10, fec_gms.strftime("%d/%m/%Y"))
-                    sheet_bd.update_cell(cell.row, 13, nuevo_est_gms)
-                    st.cache_data.clear()
-                    st.success(f"¡La Hoja de Trámite {ht_sel_central} fue actualizada a '{nuevo_est_gms}' por Sede Central en Google Sheets!")
-                    st.rerun()
-            except Exception as err:
-                st.error(f"Error al actualizar Sede Central en Google Sheets: {err}")
-
-    st.markdown("---")
+    st.markdown("### ➕ Gestión Zonal: Visualización y Monitoreo")
+    st.info("Nota: Las consultas se encuentran sincronizadas en tiempo real con la base de datos de Google Sheets.")
 
 st.markdown("### 📊 Resumen Ejecutivo")
 
 total_s = len(df_f)
-op_fav = len(df_f[df_f["Estado_Zonal"] == "Opinión favorable"])
-val_gms = len(df_f[df_f["Estado_GMS"] == "Validado"])
-pend_val = len(df_f[df_f["Estado_GMS"] == "En revisión GMS"])
-rev_zonal = len(df_f[df_f["Estado_Zonal"] == "En revisión"])
-obs_zonal = len(df_f[df_f["Estado_Zonal"] == "Observado"])
+op_fav = len(df_f[df_f["Estado_Zonal"] == "Opinión favorable"]) if "Estado_Zonal" in df_f.columns else 0
+val_gms = len(df_f[df_f["Estado_GMS"] == "Validado"]) if "Estado_GMS" in df_f.columns else 0
+pend_val = len(df_f[df_f["Estado_GMS"] == "En revisión GMS"]) if "Estado_GMS" in df_f.columns else 0
+rev_zonal = len(df_f[df_f["Estado_Zonal"] == "En revisión"]) if "Estado_Zonal" in df_f.columns else 0
+obs_zonal = len(df_f[df_f["Estado_Zonal"] == "Observado"]) if "Estado_Zonal" in df_f.columns else 0
 aprobadas = val_gms
 
 c1, c2, c3, c4, c5, c6, c7 = st.columns(7)
@@ -493,22 +352,6 @@ with c7: st.markdown(f'<div class="kpi-card"><div class="kpi-title">Aprobadas/Tr
 
 st.markdown("<br>", unsafe_allow_html=True)
 
-if user["rol"] == "SEDE_CENTRAL":
-    st.markdown("### 🔔 Bandeja de Actualizaciones Recientes de Unidades Zonales")
-    st.info("Monitoreo en tiempo real de los trámites que registran avances, opiniones favorables u observaciones en regiones (Últimas 6 actualizaciones).")
-    
-    df_actualizaciones = df.copy()
-    if "Fecha_Opinion_Zonal" in df_actualizaciones.columns:
-        df_actualizaciones["Fecha_Temp"] = pd.to_datetime(df_actualizaciones["Fecha_Opinion_Zonal"], errors="coerce")
-        df_actualizaciones = df_actualizaciones.sort_values(by="Fecha_Temp", ascending=False).head(6)
-        df_actualizaciones = df_actualizaciones.drop(columns=["Fecha_Temp"])
-    
-    st.dataframe(
-        df_actualizaciones[["HT", "Region", "Provincia", "Servicio", "Estado_Zonal", "Fecha_Opinion_Zonal", "Estado_GMS"]],
-        use_container_width=True
-    )
-    st.markdown("---")
-
 st.markdown("### 📋 Bandeja de Trabajo - Monitoreo y Seguimiento")
 st.dataframe(df_f, use_container_width=True)
 
@@ -519,13 +362,15 @@ with col_ex2:
 
 st.markdown("---")
 
-if user["rol"] == "SEDE_CENTRAL":
+col_inf1, col_inf2 = st.columns(2)
+
+with col_inf1:
     st.markdown("### 🚨 Alertas de Solicitudes Críticas")
     st.info("No se registran solicitudes críticas con exceso de días en la bandeja actual.")
-    
-    st.markdown("<br>", unsafe_allow_html=True)
+
+with col_inf2:
     st.markdown("### 📈 Eficiencia: Trámites por Provincia y Mes")
-    if not df_f.empty and "Mes" in df_f.columns:
+    if not df_f.empty and "Mes" in df_f.columns and "Num_Tramos" in df_f.columns:
         ORDEN_MESES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Setiembre", "Septiembre", "Octubre", "Noviembre", "Diciembre"]
         
         df_eficiencia = df_f.groupby(["Provincia_Formateada", "Mes"], as_index=False)["Num_Tramos"].sum()
@@ -546,50 +391,11 @@ if user["rol"] == "SEDE_CENTRAL":
             }
         )
         fig.update_layout(
-            height=450, 
-            margin=dict(l=10, r=10, t=10, b=50),
-            xaxis=dict(tickangle=90),
+            height=340, 
+            margin=dict(l=10, r=10, t=10, b=10),
+            xaxis=dict(tickangle=0),
             paper_bgcolor="white", plot_bgcolor="white"
         )
         st.plotly_chart(fig, use_container_width=True)
     else:
         st.warning("No se cuenta con la información necesaria en la base de datos para graficar la eficiencia.")
-
-else:
-    col_inf1, col_inf2 = st.columns(2)
-
-    with col_inf1:
-        st.markdown("### 🚨 Alertas de Solicitudes Críticas")
-        st.info("No se registran solicitudes críticas con exceso de días en la bandeja actual.")
-
-    with col_inf2:
-        st.markdown("### 📈 Eficiencia: Trámites por Provincia y Mes")
-        if not df_f.empty and "Mes" in df_f.columns:
-            ORDEN_MESES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Setiembre", "Septiembre", "Octubre", "Noviembre", "Diciembre"]
-            
-            df_eficiencia = df_f.groupby(["Provincia_Formateada", "Mes"], as_index=False)["Num_Tramos"].sum()
-            df_eficiencia["Mes"] = pd.Categorical(df_eficiencia["Mes"], categories=ORDEN_MESES, ordered=True)
-            df_eficiencia = df_eficiencia.sort_values("Mes")
-            
-            fig = px.bar(
-                df_eficiencia, 
-                x="Provincia_Formateada", 
-                y="Num_Tramos", 
-                color="Mes", 
-                barmode="group",
-                category_orders={"Mes": ORDEN_MESES},
-                labels={
-                    "Provincia_Formateada": "Provincia", 
-                    "Num_Tramos": "Cantidad de Tramos / Trámites",
-                    "Mes": "Mes"
-                }
-            )
-            fig.update_layout(
-                height=340, 
-                margin=dict(l=10, r=10, t=10, b=10),
-                xaxis=dict(tickangle=0),
-                paper_bgcolor="white", plot_bgcolor="white"
-            )
-            st.plotly_chart(fig, use_container_width=True)
-        else:
-            st.warning("No se cuenta con la información necesaria en la base de datos para graficar la eficiencia.")
