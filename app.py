@@ -130,7 +130,7 @@ st.markdown("""
 # URL e Identificador del Google Sheets
 SHEET_ID = "1v2Nc7v7JNB2IVFqhXM81WVJvaJgiuh31HNA68WwbOlI"
 
-# CONEXIÓN BLINDADA CON FILTRADO LÍNEA POR LÍNEA
+# CONEXIÓN NATIVA Y LIMPIA CON GOOGLE SHEETS
 @st.cache_resource
 def conectar_google_sheets():
     try:
@@ -139,30 +139,16 @@ def conectar_google_sheets():
             "https://www.googleapis.com/auth/drive"
         ]
         
-        if "gcp_json" in st.secrets:
-            creds_dict = json.loads(st.secrets["gcp_json"])
-        elif "gcp_service_account" in st.secrets:
+        # Lee directamente las credenciales estructuradas en st.secrets
+        if "gcp_service_account" in st.secrets:
             creds_dict = dict(st.secrets["gcp_service_account"])
         else:
-            st.error("❌ No se encontró la configuración de credenciales en st.secrets.")
+            st.error("❌ No se encontró la tabla [gcp_service_account] en st.secrets.")
             return None
             
-        # Limpieza quirúrgica: elimina cualquier barra invertida ('\') sobrante en la llave
-        if "private_key" in creds_dict:
-            pk = creds_dict["private_key"]
-            pk = pk.replace("\\\\n", "\n").replace("\\n", "\n")
-            lines = pk.split("\n")
-            cleaned_lines = [line.replace("\\", "") for line in lines]
-            creds_dict["private_key"] = "\n".join(cleaned_lines)
-            
-        with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".json") as f:
-            json.dump(creds_dict, f)
-            temp_filename = f.name
-            
-        creds = Credentials.from_service_account_file(temp_filename, scopes=scope)
+        creds = Credentials.from_service_account_info(creds_dict, scopes=scope)
         client = gspread.authorize(creds)
         sheet = client.open_by_key(SHEET_ID).worksheet("Base_Datos")
-        os.unlink(temp_filename)
         return sheet
     except Exception as e:
         st.error(f"❌ ERROR EXACTO DE CONEXIÓN: {e}")
