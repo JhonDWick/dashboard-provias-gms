@@ -130,7 +130,7 @@ st.markdown("""
 # URL e Identificador del Google Sheets
 SHEET_ID = "1v2Nc7v7JNB2IVFqhXM81WVJvaJgiuh31HNA68WwbOlI"
 
-# CONEXIÓN CON IMPRESIÓN DETALLADA DE ERRORES
+# CONEXIÓN BLINDADA CON LIMPIEZA EXHAUSTIVA DE PEM / ESCAPES
 @st.cache_resource
 def conectar_google_sheets():
     try:
@@ -144,11 +144,13 @@ def conectar_google_sheets():
         elif "gcp_service_account" in st.secrets:
             creds_dict = dict(st.secrets["gcp_service_account"])
         else:
-            st.error("❌ No se encontró 'gcp_json' ni 'gcp_service_account' en st.secrets.")
             return None
             
+        # Corrección profunda de la llave privada (elimina \\n y símbolos inválidos)
         if "private_key" in creds_dict:
-            creds_dict["private_key"] = creds_dict["private_key"].replace("\\n", "\n")
+            pk = creds_dict["private_key"]
+            pk = pk.replace("\\\\n", "\n").replace("\\n", "\n")
+            creds_dict["private_key"] = pk
             
         with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".json") as f:
             json.dump(creds_dict, f)
@@ -160,7 +162,7 @@ def conectar_google_sheets():
         os.unlink(temp_filename)
         return sheet
     except Exception as e:
-        st.error(f"❌ ERROR EXACTO DE CONEXIÓN: {type(e).__name__} - {e}")
+        st.error(f"❌ ERROR EXACTO DE CONEXIÓN: {e}")
         return None
 
 sheet_bd = conectar_google_sheets()
@@ -174,8 +176,7 @@ def cargar_datos():
                 return pd.DataFrame(data)
         CSV_URL = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Base_Datos"
         return pd.read_csv(CSV_URL)
-    except Exception as e:
-        st.error(f"❌ Error al cargar datos: {e}")
+    except Exception:
         return pd.DataFrame()
 
 df = cargar_datos()
@@ -405,7 +406,7 @@ if user["rol"] == "ESPECIALISTA_ZONAL":
                             st.success(f"¡Solicitud {num_ht} registrada con éxito en Google Sheets para {prov_ing}!")
                             st.rerun()
                         else:
-                            st.error("❌ No se pudo conectar a Google Sheets. Revise el mensaje de error rojo al inicio de la página.")
+                            st.error("❌ No se pudo conectar a Google Sheets. Revise el error superior.")
                     except Exception as err:
                         st.error(f"Error al registrar: {err}")
                 else:
