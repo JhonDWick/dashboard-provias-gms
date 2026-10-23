@@ -3,6 +3,9 @@ import pandas as pd
 import plotly.express as px
 from datetime import datetime, date
 import base64
+import tempfile
+import os
+import json
 import gspread
 from google.oauth2.service_account import Credentials
 
@@ -127,7 +130,7 @@ st.markdown("""
 # URL e Identificador del Google Sheets
 SHEET_ID = "1v2Nc7v7JNB2IVFqhXM81WVJvaJgiuh31HNA68WwbOlI"
 
-# CONEXIÓN SEGURA A GOOGLE SHEETS (CON MANEJO DE EXCEPCIONES PARA EVITAR CAÍDAS)
+# CONEXIÓN BLINDADA A GOOGLE SHEETS (SOPORTA SECCIÓN O JSON PLANO)
 @st.cache_resource
 def conectar_google_sheets():
     try:
@@ -135,13 +138,26 @@ def conectar_google_sheets():
             "https://www.googleapis.com/auth/spreadsheets",
             "https://www.googleapis.com/auth/drive"
         ]
+        creds_dict = None
         if "gcp_service_account" in st.secrets:
-            credentials_dict = dict(st.secrets["gcp_service_account"])
-            if "private_key" in credentials_dict:
-                credentials_dict["private_key"] = credentials_dict["private_key"].replace("\\n", "\n")
-            creds = Credentials.from_service_account_info(credentials_dict, scopes=scope)
+            creds_dict = dict(st.secrets["gcp_service_account"])
+        elif "gcp_json" in st.secrets:
+            creds_dict = json.loads(st.secrets["gcp_json"])
+            
+        if creds_dict:
+            if "private_key" in creds_dict:
+                pk = creds_dict["private_key"]
+                pk = pk.strip().replace("\\n", "\n").replace("\\\\n", "\n")
+                creds_dict["private_key"] = pk
+                
+            with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".json") as f:
+                json.dump(creds_dict, f)
+                temp_filename = f.name
+                
+            creds = Credentials.from_service_account_file(temp_filename, scopes=scope)
             client = gspread.authorize(creds)
             sheet = client.open_by_key(SHEET_ID).worksheet("BD")
+            os.unlink(temp_filename)
             return sheet
         return None
     except Exception:
@@ -389,7 +405,7 @@ if user["rol"] == "ESPECIALISTA_ZONAL":
                     except Exception as err:
                         st.error(f"Error al escribir en Google Sheets: {err}")
                 else:
-                    st.warning("Complete el número de HT o verifique la conexión con Google Sheets.")
+                    st.warning("Para registrar registros, asegúrese de que las credenciales de Sede Central estén configuradas correctamente en los Secrets de Streamlit Cloud.")
     
     with tab_actualizar:
         with st.form("form_act_estado"):
