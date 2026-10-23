@@ -3,8 +3,8 @@ import pandas as pd
 import plotly.express as px
 from datetime import datetime, date
 import base64
-import requests
-import io
+import gspread
+from google.oauth2.service_account import Credentials
 
 # Configuración de página con diseño ancho
 st.set_page_config(
@@ -127,14 +127,38 @@ st.markdown("""
 # URL e Identificador del Google Sheets
 SHEET_ID = "1v2Nc7v7JNB2IVFqhXM81WVJvaJgiuh31HNA68WwbOlI"
 
+# CONEXIÓN SEGURA A GOOGLE SHEETS (CON MANEJO DE EXCEPCIONES PARA EVITAR CAÍDAS)
+@st.cache_resource
+def conectar_google_sheets():
+    try:
+        scope = [
+            "https://www.googleapis.com/auth/spreadsheets",
+            "https://www.googleapis.com/auth/drive"
+        ]
+        if "gcp_service_account" in st.secrets:
+            credentials_dict = dict(st.secrets["gcp_service_account"])
+            if "private_key" in credentials_dict:
+                credentials_dict["private_key"] = credentials_dict["private_key"].replace("\\n", "\n")
+            creds = Credentials.from_service_account_info(credentials_dict, scopes=scope)
+            client = gspread.authorize(creds)
+            sheet = client.open_by_key(SHEET_ID).worksheet("BD")
+            return sheet
+        return None
+    except Exception:
+        return None
+
+sheet_bd = conectar_google_sheets()
+
 @st.cache_data(ttl=5)
 def cargar_datos():
     try:
+        if sheet_bd:
+            data = sheet_bd.get_all_records()
+            if data:
+                return pd.DataFrame(data)
         CSV_URL = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=BD"
-        df_loaded = pd.read_csv(CSV_URL)
-        return df_loaded
-    except Exception as e:
-        st.error(f"❌ Error al cargar los datos de Google Sheets: {e}")
+        return pd.read_csv(CSV_URL)
+    except Exception:
         return pd.DataFrame()
 
 df = cargar_datos()
@@ -327,9 +351,113 @@ sel_prov = st.sidebar.selectbox("Provincia", provincias_disponibles)
 if sel_prov != "Todas":
     df_f = df_f[df_f["Provincia"] == sel_prov]
 
+# GESTIÓN ZONAL (REGISTRAR O ACTUALIZAR)
 if user["rol"] == "ESPECIALISTA_ZONAL":
-    st.markdown("### ➕ Gestión Zonal: Visualización y Monitoreo")
-    st.info("Nota: Las consultas se encuentran sincronizadas en tiempo real con la base de datos de Google Sheets.")
+    st.markdown("### ➕ Gestión Zonal: Registrar Nueva Solicitud o Actualizar Estado")
+    
+    tab_nuevo, tab_actualizar = st.tabs(["📝 Registrar Nueva Solicitud", "✏️ Actualizar Estado de Trámite"])
+    
+    with tab_nuevo:
+        with st.form("form_nueva_solicitud"):
+            col_f1, col_f2, col_f3 = st.columns(3)
+            with col_f1:
+                num_ht = st.text_input("Número de HT (ej. E-050000-2026)")
+                regiones_permitidas = user.get("regiones", sorted(list(df["Region"].dropna().unique())))
+                reg_ing = st.selectbox("Región", regiones_permitidas)
+                prov_ing = st.selectbox("Provincia Asignada", user["provincias"])
+            with col_f2:
+                serv_ing = st.text_input("Servicio / Obra", "Mantenimiento Rutinario")
+                num_tram = st.number_input("Número de Tramos", min_value=1, value=1)
+                mes_ing = st.selectbox("Mes", ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Setiembre", "Octubre", "Noviembre", "Diciembre"])
+            with col_f3:
+                tipo_t = st.selectbox("Tipo de Trámite", ["Solicitud de recursos", "Recursos RNU"])
+                estado_z = st.selectbox("Estado Zonal", ["En revisión", "Opinión favorable", "Observado"])
+                fec_ing = st.date_input("Fecha Ingreso Zonal", date.today())
+                
+            btn_guardar = st.form_submit_button("💾 Guardar Solicitud en la Zonal")
+            if btn_guardar:
+                if num_ht and sheet_bd:
+                    try:
+                        nueva_fila = [
+                            num_ht, reg_ing, prov_ing, serv_ing, int(num_tram), mes_ing,
+                            fec_ing.strftime("%d/%m/%Y"), "", "", "", "", estado_z, "En revisión GMS"
+                        ]
+                        sheet_bd.append_row(nueva_fila)
+                        st.cache_data.clear()
+                        st.success(f"¡Solicitud {num_ht} registrada con éxito en Google Sheets para la provincia de {prov_ing} ({reg_ing})!")
+                        st.rerun()
+                    except Exception as err:
+                        st.error(f"Error al escribir en Google Sheets: {err}")
+                else:
+                    st.warning("Complete el número de HT o verifique la conexión con Google Sheets.")
+    
+    with tab_actualizar:
+        with st.form("form_act_estado"):
+            ht_sel = st.selectbox("Seleccione Código HT a modificar:", df_f["HT"].tolist() if not df_f.empty and "HT" in df_f.columns else [])
+            nuevo_est_z = st.selectbox("Nuevo Estado Zonal:", ["En revisión", "Opinión favorable", "Observado"])
+            btn_act = st.form_submit_button("🔄 Actualizar Estado Zonal")
+            if btn_act and ht_sel and sheet_bd:
+                try:
+                    cell = sheet_bd.find(ht_sel)
+                    if cell:
+                        sheet_bd.update_cell(cell.row, 12, nuevo_est_z)
+                        st.cache_data.clear()
+                        st.success(f"¡El estado zonal de la HT {ht_sel} fue actualizado a '{nuevo_est_z}'!")
+                        st.rerun()
+                except Exception as err:
+                    st.error(f"Error al actualizar estado: {err}")
+
+    st.markdown("---")
+
+# GESTIÓN SEDE CENTRAL
+if user["rol"] == "SEDE_CENTRAL":
+    st.markdown("### 🏛️ Gestión Sede Central: Validación y Actualización de Estados GMS")
+    
+    df_pendientes_validacion = pd.DataFrame()
+    if not df.empty and "Estado_Zonal" in df.columns and "Estado_GMS" in df.columns:
+        cond_opinion = df["Estado_Zonal"].astype(str).str.strip().str.lower() == "opinión favorable"
+        cond_no_validado = df["Estado_GMS"].astype(str).str.strip().str.lower() != "validado"
+        df_pendientes_validacion = df[cond_opinion & cond_no_validado]
+    
+    ht_mapping = {}
+    if not df_pendientes_validacion.empty:
+        for _, row in df_pendientes_validacion.iterrows():
+            ht_val = str(row["HT"])
+            prov_val = str(row.get("Provincia", "Sin Provincia"))
+            mes_val = str(row.get("Mes", "Sin Mes"))
+            label_opcion = f"{ht_val} — {prov_val} ({mes_val})"
+            ht_mapping[label_opcion] = ht_val
+
+    lista_opciones_ht = list(ht_mapping.keys())
+    
+    with st.form("form_gms_central"):
+        col_c1, col_c2, col_c3 = st.columns(3)
+        with col_c1:
+            if lista_opciones_ht:
+                sel_label = st.selectbox("Seleccionar Código HT a Validar:", lista_opciones_ht)
+                ht_sel_central = ht_mapping[sel_label]
+            else:
+                st.selectbox("Seleccionar Código HT a Validar:", ["No hay HT con opinión favorable pendientes"])
+                ht_sel_central = None
+        with col_c2:
+            nuevo_est_gms = st.selectbox("Estado GMS:", ["En revisión GMS", "Validado", "Observado GMS"])
+        with col_c3:
+            fec_gms = st.date_input("Fecha de Validación Central", date.today())
+            
+        btn_gms = st.form_submit_button("🛡️ Actualizar Estado GMS en Sede Central")
+        if btn_gms and ht_sel_central and sheet_bd:
+            try:
+                cell = sheet_bd.find(ht_sel_central)
+                if cell:
+                    sheet_bd.update_cell(cell.row, 10, fec_gms.strftime("%d/%m/%Y"))
+                    sheet_bd.update_cell(cell.row, 13, nuevo_est_gms)
+                    st.cache_data.clear()
+                    st.success(f"¡La Hoja de Trámite {ht_sel_central} fue actualizada a '{nuevo_est_gms}' por Sede Central!")
+                    st.rerun()
+            except Exception as err:
+                st.error(f"Error al actualizar Sede Central: {err}")
+
+    st.markdown("---")
 
 st.markdown("### 📊 Resumen Ejecutivo")
 
@@ -351,6 +479,22 @@ with c6: st.markdown(f'<div class="kpi-card"><div class="kpi-title">Observados</
 with c7: st.markdown(f'<div class="kpi-card"><div class="kpi-title">Aprobadas/Tramitadas</div><div class="kpi-value">{aprobadas}</div></div>', unsafe_allow_html=True)
 
 st.markdown("<br>", unsafe_allow_html=True)
+
+if user["rol"] == "SEDE_CENTRAL":
+    st.markdown("### 🔔 Bandeja de Actualizaciones Recientes de Unidades Zonales")
+    st.info("Monitoreo en tiempo real de los trámites que registran avances, opiniones favorables u observaciones en regiones (Últimas 6 actualizaciones).")
+    
+    df_actualizaciones = df.copy()
+    if "Fecha_Opinion_Zonal" in df_actualizaciones.columns:
+        df_actualizaciones["Fecha_Temp"] = pd.to_datetime(df_actualizaciones["Fecha_Opinion_Zonal"], errors="coerce")
+        df_actualizaciones = df_actualizaciones.sort_values(by="Fecha_Temp", ascending=False).head(6)
+        df_actualizaciones = df_actualizaciones.drop(columns=["Fecha_Temp"])
+    
+    st.dataframe(
+        df_actualizaciones[["HT", "Region", "Provincia", "Servicio", "Estado_Zonal", "Fecha_Opinion_Zonal", "Estado_GMS"]],
+        use_container_width=True
+    )
+    st.markdown("---")
 
 st.markdown("### 📋 Bandeja de Trabajo - Monitoreo y Seguimiento")
 st.dataframe(df_f, use_container_width=True)
