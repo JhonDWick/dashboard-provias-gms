@@ -130,7 +130,7 @@ st.markdown("""
 # URL e Identificador del Google Sheets
 SHEET_ID = "1v2Nc7v7JNB2IVFqhXM81WVJvaJgiuh31HNA68WwbOlI"
 
-# CONEXIÓN BLINDADA CON DECODIFICACIÓN UNIVERSAL DE LLAVE PRIVADA
+# CONEXIÓN BLINDADA CON RECONSTRUCCIÓN AUTOMÁTICA DEL FORMATO PEM
 @st.cache_resource
 def conectar_google_sheets():
     try:
@@ -144,19 +144,23 @@ def conectar_google_sheets():
         elif "gcp_service_account" in st.secrets:
             creds_dict = dict(st.secrets["gcp_service_account"])
         else:
-            st.error("❌ No se encontró la configuración de credenciales en st.secrets.")
             return None
             
-        # Limpieza y conversión universal de la llave privada
+        # Reconstrucción quirúrgica y automática de la llave privada
         if "private_key" in creds_dict:
+            import re
             pk = creds_dict["private_key"]
-            # Reemplazos exhaustivos para eliminar cualquier conflicto de barras
-            pk = pk.replace("\\\\n", "\n").replace("\\n", "\n")
-            try:
-                pk = bytes(pk, "utf-8").decode("unicode_escape")
-            except Exception:
-                pass
-            creds_dict["private_key"] = pk
+            # Extraer el contenido entre los encabezados PEM
+            match = re.search(r'-----BEGIN PRIVATE KEY-----(.*?)-----END PRIVATE KEY-----', pk, re.DOTALL)
+            if match:
+                key_body = match.group(1)
+                # Eliminar cualquier barra invertida (\), espacios o saltos de línea erróneos
+                key_body = re.sub(r'[\s\\]+', '', key_body)
+                # Reorganizar el código base64 limpio en líneas estándar de 64 caracteres
+                formatted_body = '\n'.join(key_body[i:i+64] for i in range(0, len(key_body), 64))
+                creds_dict["private_key"] = f"-----BEGIN PRIVATE KEY-----\n{formatted_body}\n-----END PRIVATE KEY-----\n"
+            else:
+                creds_dict["private_key"] = pk.replace("\\\\n", "\n").replace("\\n", "\n")
             
         with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".json") as f:
             json.dump(creds_dict, f)
