@@ -127,7 +127,7 @@ st.markdown("""
 # URL e Identificador del Google Sheets
 SHEET_ID = "1v2Nc7v7JNB2IVFqhXM81WVJvaJgiuh31HNA68WwbOlI"
 
-# CONEXIÓN CON GSPREAD MEDIANTE ARCHIVO TEMPORAL (EVITA ERRORES ASN.1 Y PEM)
+# CONEXIÓN CON GSPREAD MEDIANTE ARCHIVO TEMPORAL Y LIMPIEZA DE LLAVE PEM
 @st.cache_resource
 def conectar_google_sheets():
     try:
@@ -141,9 +141,14 @@ def conectar_google_sheets():
         ]
         
         credentials_dict = dict(st.secrets["gcp_service_account"])
+        
+        # Limpieza exhaustiva de saltos de línea en la llave privada
         if "private_key" in credentials_dict:
-            credentials_dict["private_key"] = credentials_dict["private_key"].replace("\\n", "\n")
+            pk = credentials_dict["private_key"]
+            pk = pk.replace("\\\\n", "\n").replace("\\n", "\n")
+            credentials_dict["private_key"] = pk
             
+        # Creamos el archivo temporal con el JSON limpio
         with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".json") as f:
             json.dump(credentials_dict, f)
             temp_filename = f.name
