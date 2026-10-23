@@ -11,9 +11,14 @@ st.set_page_config(
     layout="wide"
 )
 
-# Estilos CSS Profesionales con la Paleta Institucional Roja (Estilo MTC / Provías)
+# Estilos CSS Profesionales con Fondo Ejecutivo e Institucional
 st.markdown("""
     <style>
+    /* Fondo general de la aplicación y área de contenido principal */
+    .stApp {
+        background-color: #f8fafc !important;
+    }
+
     /* Fondo de infraestructura vial en la barra lateral con capa institucional roja */
     [data-testid="stSidebar"] {
         background-image: linear-gradient(rgba(220, 38, 38, 0.94), rgba(185, 28, 28, 0.94)), url("https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?q=80&w=1000&auto=format&fit=crop");
@@ -32,6 +37,7 @@ st.markdown("""
         border-radius: 6px !important;
         width: 100% !important;
         height: 42px !important;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
     }
     div.stButton > button * {
         color: #dc2626 !important;
@@ -48,13 +54,14 @@ st.markdown("""
 
     .header-container {
         background-color: #dc2626;
-        padding: 12px 20px;
-        border-radius: 6px;
+        padding: 14px 22px;
+        border-radius: 8px;
         color: white;
         display: flex;
         align-items: center;
         justify-content: space-between;
-        margin-bottom: 20px;
+        margin-bottom: 25px;
+        box-shadow: 0 4px 6px -1px rgba(220, 38, 38, 0.2);
     }
     .header-title {
         font-size: 20px;
@@ -63,14 +70,17 @@ st.markdown("""
         margin: 0;
         text-align: center;
         width: 100%;
+        letter-spacing: 0.5px;
     }
+    
+    /* Tarjetas KPI más elegantes con sombra flotante */
     .kpi-card {
         background-color: #ffffff;
-        border: 1px solid #e0e0e0;
+        border: 1px solid #e2e8f0;
         border-left: 5px solid #dc2626;
-        padding: 12px 8px;
-        border-radius: 6px;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        padding: 14px 10px;
+        border-radius: 8px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px -1px rgba(0, 0, 0, 0.02);
         text-align: center;
         height: 95px;
         display: flex;
@@ -81,7 +91,7 @@ st.markdown("""
     }
     .kpi-title { 
         font-size: 10px; 
-        color: #555; 
+        color: #64748b; 
         font-weight: bold; 
         text-transform: uppercase; 
         line-height: 1.2;
@@ -94,17 +104,19 @@ st.markdown("""
         margin: 0;
     }
     .welcome-card-header {
-        background-color: #f8f9fa;
-        border: 1px solid #e0e0e0;
+        background-color: #ffffff;
+        border: 1px solid #e2e8f0;
         border-top: 4px solid #dc2626;
-        padding: 10px;
+        padding: 12px;
         border-radius: 8px 8px 0 0;
         text-align: center;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
     }
     .welcome-card-header h4 {
         font-size: 15px;
         color: #dc2626;
         margin: 0;
+        font-weight: bold;
     }
     .formal-subtitle {
         font-family: 'Arial', sans-serif;
@@ -219,7 +231,7 @@ if not st.session_state.logged_in:
     
     # ENCABEZADO INSTITUCIONAL PRINCIPAL
     st.markdown("""
-        <div style="background-color: #dc2626; padding: 25px; border-radius: 8px; color: white; text-align: center; margin-bottom: 25px;">
+        <div style="background-color: #dc2626; padding: 25px; border-radius: 8px; color: white; text-align: center; margin-bottom: 25px; box-shadow: 0 4px 6px -1px rgba(220, 38, 38, 0.2);">
             <h1 style="color: white; margin: 0; font-size: 28px; font-weight: 800;">PROVÍAS DESCENTRALIZADO</h1>
             <h3 style="color: #fef2f2; margin-top: 8px; font-weight: normal; font-size: 17px;">COORDINACIÓN DE MANTENIMIENTO VIAL — GERENCIA DE MONITOREO Y SEGUIMIENTO (GMS)</h3>
         </div>
@@ -245,7 +257,8 @@ if not st.session_state.logged_in:
             )
             fig_w1.update_layout(
                 height=180, margin=dict(l=5, r=5, t=10, b=10),
-                xaxis_title="", yaxis_title="", showlegend=False
+                xaxis_title="", yaxis_title="", showlegend=False,
+                paper_bgcolor="white", plot_bgcolor="white"
             )
             st.plotly_chart(fig_w1, use_container_width=True)
         else:
@@ -263,7 +276,8 @@ if not st.session_state.logged_in:
             )
             fig_w2.update_layout(
                 height=180, margin=dict(l=5, r=5, t=10, b=10),
-                showlegend=True, legend=dict(orientation="h", y=-0.2)
+                showlegend=True, legend=dict(orientation="h", y=-0.2),
+                paper_bgcolor="white", plot_bgcolor="white"
             )
             st.plotly_chart(fig_w2, use_container_width=True)
         else:
@@ -281,7 +295,8 @@ if not st.session_state.logged_in:
             )
             fig_w3.update_layout(
                 height=180, margin=dict(l=5, r=5, t=10, b=10),
-                showlegend=True, legend=dict(orientation="h", y=-0.2)
+                showlegend=True, legend=dict(orientation="h", y=-0.2),
+                paper_bgcolor="white", plot_bgcolor="white"
             )
             st.plotly_chart(fig_w3, use_container_width=True)
         else:
@@ -371,7 +386,7 @@ if user["rol"] == "ESPECIALISTA_ZONAL":
 
     st.markdown("---")
 
-# 1.1. GESTIÓN SEDE CENTRAL (SI ES SEDE CENTRAL)
+# 1.1. GESTIÓN SEDE CENTRAL (SI ES SEDE CENTRAL) - MUESTRA HT, PROVINCIA Y MES
 if user["rol"] == "SEDE_CENTRAL":
     st.markdown("### 🏛️ Gestión Sede Central: Validación y Actualización de Estados GMS")
     
@@ -492,7 +507,8 @@ if user["rol"] == "SEDE_CENTRAL":
         fig.update_layout(
             height=450, 
             margin=dict(l=10, r=10, t=10, b=50),
-            xaxis=dict(tickangle=90)
+            xaxis=dict(tickangle=90),
+            paper_bgcolor="white", plot_bgcolor="white"
         )
         st.plotly_chart(fig, use_container_width=True)
     else:
@@ -530,7 +546,8 @@ else:
             fig.update_layout(
                 height=340, 
                 margin=dict(l=10, r=10, t=10, b=10),
-                xaxis=dict(tickangle=0)
+                xaxis=dict(tickangle=0),
+                paper_bgcolor="white", plot_bgcolor="white"
             )
             st.plotly_chart(fig, use_container_width=True)
         else:
