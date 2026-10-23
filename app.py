@@ -3,6 +3,8 @@ import pandas as pd
 import plotly.express as px
 from datetime import datetime, date
 import base64
+import gspread
+from google.oauth2.service_account import Credentials
 
 # Configuración de página con diseño ancho
 st.set_page_config(
@@ -14,12 +16,9 @@ st.set_page_config(
 # Estilos CSS Profesionales con Fondo Ejecutivo e Institucional
 st.markdown("""
     <style>
-    /* Fondo general de la aplicación y área de contenido principal */
     .stApp {
         background-color: #f8fafc !important;
     }
-
-    /* Fondo de infraestructura vial en la barra lateral con capa institucional roja */
     [data-testid="stSidebar"] {
         background-image: linear-gradient(rgba(220, 38, 38, 0.94), rgba(185, 28, 28, 0.94)), url("https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?q=80&w=1000&auto=format&fit=crop");
         background-size: cover;
@@ -29,8 +28,6 @@ st.markdown("""
     [data-testid="stSidebar"] h1, [data-testid="stSidebar"] h2, [data-testid="stSidebar"] h3, [data-testid="stSidebar"] label, [data-testid="stSidebar"] p, [data-testid="stSidebar"] span {
         color: white !important;
     }
-    
-    /* FORZAR COLOR ROJO EN TEXTOS DE BOTONES Y BORDES */
     div.stButton > button {
         background-color: #ffffff !important;
         border: 2px solid #ffffff !important;
@@ -72,8 +69,6 @@ st.markdown("""
         width: 100%;
         letter-spacing: 0.5px;
     }
-    
-    /* Tarjetas KPI más elegantes con sombra flotante */
     .kpi-card {
         background-color: #ffffff;
         border: 1px solid #e2e8f0;
@@ -129,21 +124,42 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# URL del Google Sheets
+# URL e Identificador del Google Sheets
 SHEET_ID = "1v2Nc7v7JNB2IVFqhXM81WVJvaJgiuh31HNA68WwbOlI"
-CSV_URL = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=BD"
 
-@st.cache_data(ttl=10)
+# CONEXIÓN CON GSPREAD VÍA STREAMLIT SECRETS
+@st.cache_resource
+def conectar_google_sheets():
+    try:
+        scope = [
+            "https://www.googleapis.com/auth/spreadsheets",
+            "https://www.googleapis.com/auth/drive"
+        ]
+        credentials_dict = dict(st.secrets["gcp_service_account"])
+        creds = Credentials.from_service_account_info(credentials_dict, scopes=scope)
+        client = gspread.authorize(creds)
+        sheet = client.open_by_key(SHEET_ID).worksheet("BD")
+        return sheet
+    except Exception as e:
+        return None
+
+sheet_bd = conectar_google_sheets()
+
+@st.cache_data(ttl=5)
 def cargar_datos():
     try:
-        df = pd.read_csv(CSV_URL)
-        return df
+        if sheet_bd:
+            data = sheet_bd.get_all_records()
+            return pd.DataFrame(data)
+        else:
+            CSV_URL = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=BD"
+            return pd.read_csv(CSV_URL)
     except Exception as e:
         return pd.DataFrame()
 
 df = cargar_datos()
 
-# Formatear columna Provincia y ordenar por fecha de ingreso reciente a antigua (Cronológico inverso)
+# Formatear columna Provincia y ordenar por fecha de ingreso reciente a antigua
 if not df.empty and "Provincia" in df.columns:
     df["Provincia_Formateada"] = df["Provincia"].astype(str).str.strip().str.title()
     if "Fecha_Ingreso_Zonal" in df.columns:
@@ -177,9 +193,7 @@ USUARIOS = {
     "lortiz": {"pass": "Zonal2026!", "nombre": "Luis Eduardo Ortiz Fonttis", "rol": "ESPECIALISTA_ZONAL", "provincias": ["MARISCAL NIETO", "ILO", "GENERAL SANCHEZ CERRO"], "regiones": ["Moquegua"]}
 }
 
-# ----------------------------------------------------
-# SISTEMA DE PERSISTENCIA DE SESIÓN VÍA QUERY PARAMS
-# ----------------------------------------------------
+# PERSISTENCIA DE SESIÓN VÍA QUERY PARAMS
 query_params = st.query_params
 usr_param = query_params.get("u", None)
 
@@ -229,7 +243,6 @@ if not st.session_state.logged_in:
         unsafe_allow_html=True
     )
     
-    # ENCABEZADO INSTITUCIONAL PRINCIPAL
     st.markdown("""
         <div style="background-color: #dc2626; padding: 25px; border-radius: 8px; color: white; text-align: center; margin-bottom: 25px; box-shadow: 0 4px 6px -1px rgba(220, 38, 38, 0.2);">
             <h1 style="color: white; margin: 0; font-size: 28px; font-weight: 800;">PROVÍAS DESCENTRALIZADO</h1>
@@ -237,15 +250,12 @@ if not st.session_state.logged_in:
         </div>
     """, unsafe_allow_html=True)
 
-    # TÍTULO DE LA PLATAFORMA FORMAL
     st.markdown('<div class="formal-subtitle">🌐 PLATAFORMA DE MONITOREO Y GESTIÓN</div>', unsafe_allow_html=True)
     st.write("Sistema informático orientado al seguimiento, control de estados y tramitación de recursos para el mantenimiento rutinario de caminos vecinales a nivel nacional.")
     st.markdown("<br>", unsafe_allow_html=True)
     
-    # TARJETAS DE BIENVENIDA CON COLORES Y PLOTLY
     col_w1, col_w2, col_w3 = st.columns(3)
     
-    # GRÁFICO 1: Cobertura Zonal (ROJO)
     with col_w1:
         st.markdown('<div class="welcome-card-header"><h4>🛣️ Cobertura Zonal</h4></div>', unsafe_allow_html=True)
         if not df.empty and "Region" in df.columns:
@@ -264,7 +274,6 @@ if not st.session_state.logged_in:
         else:
             st.info("Cargando cobertura zonal...")
 
-    # GRÁFICO 2: Trazabilidad en Línea (AZUL)
     with col_w2:
         st.markdown('<div class="welcome-card-header"><h4>📊 Trazabilidad en Línea</h4></div>', unsafe_allow_html=True)
         if not df.empty and "Estado_Zonal" in df.columns:
@@ -283,7 +292,6 @@ if not st.session_state.logged_in:
         else:
             st.info("Cargando estados zonales...")
 
-    # GRÁFICO 3: Validaciones GMS (VERDE)
     with col_w3:
         st.markdown('<div class="welcome-card-header"><h4>👥 Validaciones GMS</h4></div>', unsafe_allow_html=True)
         if not df.empty and "Estado_GMS" in df.columns:
@@ -332,7 +340,6 @@ st.sidebar.subheader("🔍 Filtros de Búsqueda")
 
 df_f = df.copy()
 
-# APLICAR FILTRO ESTRICTO DE PROVINCIAS SEGÚN EL ROL
 if user["rol"] == "ESPECIALISTA_ZONAL":
     provincias_usuario = [p.strip().upper() for p in user["provincias"]]
     df_f = df_f[df_f["Provincia"].astype(str).str.strip().str.upper().isin(provincias_usuario)]
@@ -349,7 +356,7 @@ sel_prov = st.sidebar.selectbox("Provincia", provincias_disponibles)
 if sel_prov != "Todas":
     df_f = df_f[df_f["Provincia"] == sel_prov]
 
-# 1. GESTIÓN ZONAL (SI ES ESPECIALISTA ZONAL)
+# 1. GESTIÓN ZONAL (ESCRITURA EN TIEMPO REAL)
 if user["rol"] == "ESPECIALISTA_ZONAL":
     st.markdown("### ➕ Gestión Zonal: Registrar Nueva Solicitud o Actualizar Estado")
     
@@ -374,19 +381,42 @@ if user["rol"] == "ESPECIALISTA_ZONAL":
                 
             btn_guardar = st.form_submit_button("💾 Guardar Solicitud en la Zonal")
             if btn_guardar:
-                st.success(f"¡Solicitud {num_ht} registrada con éxito para la provincia de {prov_ing} ({reg_ing})!")
+                if num_ht and sheet_bd:
+                    try:
+                        # Fila estándar para insertar en Google Sheets
+                        nueva_fila = [
+                            num_ht, reg_ing, prov_ing, serv_ing, int(num_tram), mes_ing,
+                            fec_ing.strftime("%d/%m/%Y"), "", "", "", "", estado_z, "En revisión GMS"
+                        ]
+                        sheet_bd.append_row(nueva_fila)
+                        st.cache_data.clear()
+                        st.success(f"¡Solicitud {num_ht} registrada con éxito en Google Sheets para la provincia de {prov_ing} ({reg_ing})!")
+                        st.rerun()
+                    except Exception as err:
+                        st.error(f"Error al escribir en Google Sheets: {err}")
+                else:
+                    st.warning("Por favor complete el código HT o verifique la conexión con Google Sheets.")
     
     with tab_actualizar:
         with st.form("form_act_estado"):
             ht_sel = st.selectbox("Seleccione Código HT a modificar:", df_f["HT"].tolist() if not df_f.empty else [])
             nuevo_est_z = st.selectbox("Nuevo Estado Zonal:", ["En revisión", "Opinión favorable", "Observado"])
             btn_act = st.form_submit_button("🔄 Actualizar Estado Zonal")
-            if btn_act and ht_sel:
-                st.success(f"¡El estado zonal de la HT {ht_sel} fue actualizado a '{nuevo_est_z}' con éxito!")
+            if btn_act and ht_sel and sheet_bd:
+                try:
+                    cell = sheet_bd.find(ht_sel)
+                    if cell:
+                        # Columna 12 = Estado Zonal
+                        sheet_bd.update_cell(cell.row, 12, nuevo_est_z)
+                        st.cache_data.clear()
+                        st.success(f"¡El estado zonal de la HT {ht_sel} fue actualizado a '{nuevo_est_z}' en Google Sheets!")
+                        st.rerun()
+                except Exception as err:
+                    st.error(f"Error al actualizar estado en Google Sheets: {err}")
 
     st.markdown("---")
 
-# 1.1. GESTIÓN SEDE CENTRAL (SI ES SEDE CENTRAL) - MUESTRA HT, PROVINCIA Y MES
+# 1.1. GESTIÓN SEDE CENTRAL (ACTUALIZACIÓN GMS EN TIEMPO REAL)
 if user["rol"] == "SEDE_CENTRAL":
     st.markdown("### 🏛️ Gestión Sede Central: Validación y Actualización de Estados GMS")
     
@@ -422,8 +452,18 @@ if user["rol"] == "SEDE_CENTRAL":
             fec_gms = st.date_input("Fecha de Validación Central", date.today())
             
         btn_gms = st.form_submit_button("🛡️ Actualizar Estado GMS en Sede Central")
-        if btn_gms and ht_sel_central:
-            st.success(f"¡La Hoja de Trámite {ht_sel_central} fue actualizada a '{nuevo_est_gms}' por Sede Central con éxito!")
+        if btn_gms and ht_sel_central and sheet_bd:
+            try:
+                cell = sheet_bd.find(ht_sel_central)
+                if cell:
+                    # Columna 10 = Fecha_Validacion_GMS, Columna 13 = Estado GMS
+                    sheet_bd.update_cell(cell.row, 10, fec_gms.strftime("%d/%m/%Y"))
+                    sheet_bd.update_cell(cell.row, 13, nuevo_est_gms)
+                    st.cache_data.clear()
+                    st.success(f"¡La Hoja de Trámite {ht_sel_central} fue actualizada a '{nuevo_est_gms}' por Sede Central en Google Sheets!")
+                    st.rerun()
+            except Exception as err:
+                st.error(f"Error al actualizar Sede Central en Google Sheets: {err}")
 
     st.markdown("---")
 
@@ -466,7 +506,7 @@ if user["rol"] == "SEDE_CENTRAL":
     )
     st.markdown("---")
 
-# 4. BANDEJA DE TRABAJO PRINCIPAL (ORDENADA DE MÁS RECIENTE A MÁS ANTIGUA)
+# 4. BANDEJA DE TRABAJO PRINCIPAL
 st.markdown("### 📋 Bandeja de Trabajo - Monitoreo y Seguimiento")
 st.dataframe(df_f, use_container_width=True)
 
@@ -477,7 +517,7 @@ with col_ex2:
 
 st.markdown("---")
 
-# 5. MÓDULOS INFERIORES: SEDE CENTRAL (ANCHO COMPLETO Y 90°) VS ZONALES (DOS COLUMNAS)
+# 5. MÓDULOS INFERIORES: EFICIENCIA Y ALERTAS
 if user["rol"] == "SEDE_CENTRAL":
     st.markdown("### 🚨 Alertas de Solicitudes Críticas")
     st.info("No se registran solicitudes críticas con exceso de días en la bandeja actual.")
