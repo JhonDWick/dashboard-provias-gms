@@ -157,7 +157,7 @@ def img_to_base64(possible_names):
 img_transp_b64 = img_to_base64(["Consulta Amigable.png", "consulta amigable.png", "transparencia.png"])
 img_transf_b64 = img_to_base64(["Consulta Transferencia.png", "consulta transferencia.png", "transferencia.png"])
 
-# Usuarios y Asignación Exacta de Provincias
+# Usuarios y Asignación Exacta de Provincias y Regiones
 USUARIOS = {
     "central_gms": {"pass": "GmsCentral2026!", "nombre": "Especialista Sede Central", "rol": "SEDE_CENTRAL", "provincias": "TODAS", "regiones": ["Huancavelica", "Moquegua", "Tacna"]},
     "jparra": {"pass": "Zonal2026!", "nombre": "José Parra Benavides", "rol": "ESPECIALISTA_ZONAL", "provincias": ["ACOBAMBA"], "regiones": ["Huancavelica"]},
@@ -165,8 +165,8 @@ USUARIOS = {
     "jponce": {"pass": "Zonal2026!", "nombre": "Jhon Ponce Francia", "rol": "ESPECIALISTA_ZONAL", "provincias": ["CASTROVIRREYNA", "HUAYTARÁ"], "regiones": ["Huancavelica"]},
     "jcarhuaricra": {"pass": "Zonal2026!", "nombre": "Jaqueline Judith Carhuaricra Estrella", "rol": "ESPECIALISTA_ZONAL", "provincias": ["HUANCAVELICA"], "regiones": ["Huancavelica"]},
     "rleon": {"pass": "Zonal2026!", "nombre": "Randolf Arturo León Rojas", "rol": "ESPECIALISTA_ZONAL", "provincias": ["TAYACAJA"], "regiones": ["Huancavelica"]},
-    "atorres": {"pass": "Zonal2026!", "nombre": "Alexa Torres Flores", "rol": "ESPECIALISTA_ZONAL", "provincias": ["TACNA", "CANDARAVE", "TARATA", "JORGE BASADRE"], "regiones": ["Tacna", "Moquegua"]},
-    "lortiz": {"pass": "Zonal2026!", "nombre": "Luis Eduardo Ortiz Fonttis", "rol": "ESPECIALISTA_ZONAL", "provincias": ["MARISCAL NIETO", "ILO", "GENERAL SANCHEZ CERRO"], "regiones": ["Tacna", "Moquegua"]}
+    "atorres": {"pass": "Zonal2026!", "nombre": "Alexa Torres Flores", "rol": "ESPECIALISTA_ZONAL", "provincias": ["TACNA", "CANDARAVE", "TARATA", "JORGE BASADRE"], "regiones": ["Tacna"]},
+    "lortiz": {"pass": "Zonal2026!", "nombre": "Luis Eduardo Ortiz Fonttis", "rol": "ESPECIALISTA_ZONAL", "provincias": ["MARISCAL NIETO", "ILO", "GENERAL SANCHEZ CERRO"], "regiones": ["Moquegua"]}
 }
 
 if "logged_in" not in st.session_state:
@@ -299,7 +299,7 @@ if user["rol"] == "ESPECIALISTA_ZONAL":
             col_f1, col_f2, col_f3 = st.columns(3)
             with col_f1:
                 num_ht = st.text_input("Número de HT (ej. E-050000-2026)")
-                # RESTRICCIÓN DE REGIÓN SEGÚN LA UNIDAD ZONAL DEL USUARIO
+                # RESTRICCIÓN DE REGIÓN SEGÚN EL USUARIO EXACTO
                 regiones_permitidas = user.get("regiones", sorted(list(df["Region"].dropna().unique())))
                 reg_ing = st.selectbox("Región", regiones_permitidas)
                 prov_ing = st.selectbox("Provincia Asignada", user["provincias"])
