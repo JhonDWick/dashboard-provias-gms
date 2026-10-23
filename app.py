@@ -106,6 +106,14 @@ st.markdown("""
         color: #dc2626;
         margin: 0;
     }
+    .formal-subtitle {
+        font-family: 'Arial', sans-serif;
+        font-size: 22px;
+        font-weight: 800;
+        color: #1e293b;
+        letter-spacing: 0.5px;
+        margin-bottom: 5px;
+    }
     </style>
 """, unsafe_allow_html=True)
 
@@ -197,23 +205,25 @@ if not st.session_state.logged_in:
         unsafe_allow_html=True
     )
     
+    # ENCABEZADO INSTITUCIONAL PRINCIPAL ACTUALIZADO
     st.markdown("""
         <div style="background-color: #dc2626; padding: 25px; border-radius: 8px; color: white; text-align: center; margin-bottom: 25px;">
-            <h1 style="color: white; margin: 0; font-size: 26px;">MINISTERIO DE TRANSPORTES Y COMUNICACIONES</h1>
-            <h3 style="color: #fef2f2; margin-top: 8px; font-weight: normal; font-size: 18px;">PROVÍAS DESCENTRALIZADO — GERENCIA DE MONITOREO Y SEGUIMIENTO (GMS)</h3>
+            <h1 style="color: white; margin: 0; font-size: 28px; font-weight: 800;">PROVÍAS DESCENTRALIZADO</h1>
+            <h3 style="color: #fef2f2; margin-top: 8px; font-weight: normal; font-size: 17px;">COORDINACIÓN DE MANTENIMIENTO VIAL — GERENCIA DE MONITOREO Y SEGUIMIENTO (GMS)</h3>
         </div>
     """, unsafe_allow_html=True)
 
-    st.markdown("### 🌐 Plataforma de Monitoreo y Gestión de Solicitudes de Recursos Financieros")
+    # TÍTULO DE LA PLATAFORMA EN TIPO DE LETRA FORMAL Y RESTRUCTURADO
+    st.markdown('<div class="formal-subtitle">🌐 PLATAFORMA DE MONITOREO Y GESTIÓN</div>', unsafe_allow_html=True)
     st.write("Sistema informático orientado al seguimiento, control de estados y tramitación de recursos para el mantenimiento rutinario de caminos vecinales a nivel nacional.")
     st.markdown("<br>", unsafe_allow_html=True)
     
     # ----------------------------------------------------
-    # TARJETAS DE BIENVENIDA CON GRÁFICOS REALES PLOTLY
+    # TARJETAS DE BIENVENIDA CON COLORES PERSONALIZADOS
     # ----------------------------------------------------
     col_w1, col_w2, col_w3 = st.columns(3)
     
-    # GRÁFICO 1: Cobertura por Región (Barras horizontales)
+    # GRÁFICO 1: Cobertura Zonal (ROJO)
     with col_w1:
         st.markdown('<div class="welcome-card-header"><h4>🛣️ Cobertura Zonal</h4></div>', unsafe_allow_html=True)
         if not df.empty and "Region" in df.columns:
@@ -221,7 +231,7 @@ if not st.session_state.logged_in:
             df_reg.columns = ["Región", "Solicitudes"]
             fig_w1 = px.bar(
                 df_reg, x="Solicitudes", y="Región", orientation="h",
-                color_discrete_sequence=["#dc2626"], text="Solicitudes"
+                color_discrete_sequence=["#dc2626"], text="Solicitudes" # ROJO
             )
             fig_w1.update_layout(
                 height=180, margin=dict(l=5, r=5, t=10, b=10),
@@ -231,7 +241,7 @@ if not st.session_state.logged_in:
         else:
             st.info("Cargando cobertura zonal...")
 
-    # GRÁFICO 2: Trazabilidad en Línea (Gráfico de Dona por Estado Zonal)
+    # GRÁFICO 2: Trazabilidad en Línea (AZUL)
     with col_w2:
         st.markdown('<div class="welcome-card-header"><h4>📊 Trazabilidad en Línea</h4></div>', unsafe_allow_html=True)
         if not df.empty and "Estado_Zonal" in df.columns:
@@ -239,7 +249,7 @@ if not st.session_state.logged_in:
             df_est_z.columns = ["Estado", "Cantidad"]
             fig_w2 = px.pie(
                 df_est_z, values="Cantidad", names="Estado", hole=0.5,
-                color_discrete_sequence=["#dc2626", "#2563eb", "#f59e0b"]
+                color_discrete_sequence=["#2563eb", "#60a5fa", "#1d4ed8"] # AZUL
             )
             fig_w2.update_layout(
                 height=180, margin=dict(l=5, r=5, t=10, b=10),
@@ -249,7 +259,7 @@ if not st.session_state.logged_in:
         else:
             st.info("Cargando estados zonales...")
 
-    # GRÁFICO 3: Estado de Validaciones GMS (Gráfico de Anillo Central)
+    # GRÁFICO 3: Validaciones GMS (VERDE)
     with col_w3:
         st.markdown('<div class="welcome-card-header"><h4>👥 Validaciones GMS</h4></div>', unsafe_allow_html=True)
         if not df.empty and "Estado_GMS" in df.columns:
@@ -257,7 +267,7 @@ if not st.session_state.logged_in:
             df_est_gms.columns = ["Estado GMS", "Cantidad"]
             fig_w3 = px.pie(
                 df_est_gms, values="Cantidad", names="Estado GMS", hole=0.5,
-                color_discrete_sequence=["#16a34a", "#dc2626", "#6b7280"]
+                color_discrete_sequence=["#16a34a", "#22c55e", "#15803d"] # VERDE
             )
             fig_w3.update_layout(
                 height=180, margin=dict(l=5, r=5, t=10, b=10),
