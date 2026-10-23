@@ -165,7 +165,17 @@ USUARIOS = {
     "lortiz": {"pass": "Zonal2026!", "nombre": "Luis Eduardo Ortiz Fonttis", "rol": "ESPECIALISTA_ZONAL", "provincias": ["MARISCAL NIETO", "ILO", "GENERAL SANCHEZ CERRO"], "regiones": ["Moquegua"]}
 }
 
-if "logged_in" not in st.session_state:
+# ----------------------------------------------------
+# SISTEMA DE PERSISTENCIA DE SESIÓN VÍA QUERY PARAMS
+# ----------------------------------------------------
+query_params = st.query_params
+usr_param = query_params.get("u", None)
+
+if usr_param and usr_param in USUARIOS:
+    st.session_state.logged_in = True
+    st.session_state.user = USUARIOS[usr_param]
+    st.session_state.usr_key = usr_param
+elif "logged_in" not in st.session_state:
     st.session_state.logged_in = False
     st.session_state.user = None
 
@@ -181,6 +191,8 @@ if not st.session_state.logged_in:
         if usr in USUARIOS and USUARIOS[usr]["pass"] == pwd:
             st.session_state.logged_in = True
             st.session_state.user = USUARIOS[usr]
+            st.session_state.usr_key = usr
+            st.query_params["u"] = usr
             st.rerun()
         else:
             st.sidebar.error("Usuario o contraseña incorrectos.")
@@ -205,7 +217,7 @@ if not st.session_state.logged_in:
         unsafe_allow_html=True
     )
     
-    # ENCABEZADO INSTITUCIONAL PRINCIPAL ACTUALIZADO
+    # ENCABEZADO INSTITUCIONAL PRINCIPAL
     st.markdown("""
         <div style="background-color: #dc2626; padding: 25px; border-radius: 8px; color: white; text-align: center; margin-bottom: 25px;">
             <h1 style="color: white; margin: 0; font-size: 28px; font-weight: 800;">PROVÍAS DESCENTRALIZADO</h1>
@@ -213,14 +225,12 @@ if not st.session_state.logged_in:
         </div>
     """, unsafe_allow_html=True)
 
-    # TÍTULO DE LA PLATAFORMA EN TIPO DE LETRA FORMAL Y RESTRUCTURADO
+    # TÍTULO DE LA PLATAFORMA FORMAL
     st.markdown('<div class="formal-subtitle">🌐 PLATAFORMA DE MONITOREO Y GESTIÓN</div>', unsafe_allow_html=True)
     st.write("Sistema informático orientado al seguimiento, control de estados y tramitación de recursos para el mantenimiento rutinario de caminos vecinales a nivel nacional.")
     st.markdown("<br>", unsafe_allow_html=True)
     
-    # ----------------------------------------------------
-    # TARJETAS DE BIENVENIDA CON COLORES PERSONALIZADOS
-    # ----------------------------------------------------
+    # TARJETAS DE BIENVENIDA CON COLORES Y PLOTLY
     col_w1, col_w2, col_w3 = st.columns(3)
     
     # GRÁFICO 1: Cobertura Zonal (ROJO)
@@ -231,7 +241,7 @@ if not st.session_state.logged_in:
             df_reg.columns = ["Región", "Solicitudes"]
             fig_w1 = px.bar(
                 df_reg, x="Solicitudes", y="Región", orientation="h",
-                color_discrete_sequence=["#dc2626"], text="Solicitudes" # ROJO
+                color_discrete_sequence=["#dc2626"], text="Solicitudes"
             )
             fig_w1.update_layout(
                 height=180, margin=dict(l=5, r=5, t=10, b=10),
@@ -249,7 +259,7 @@ if not st.session_state.logged_in:
             df_est_z.columns = ["Estado", "Cantidad"]
             fig_w2 = px.pie(
                 df_est_z, values="Cantidad", names="Estado", hole=0.5,
-                color_discrete_sequence=["#2563eb", "#60a5fa", "#1d4ed8"] # AZUL
+                color_discrete_sequence=["#2563eb", "#60a5fa", "#1d4ed8"]
             )
             fig_w2.update_layout(
                 height=180, margin=dict(l=5, r=5, t=10, b=10),
@@ -267,7 +277,7 @@ if not st.session_state.logged_in:
             df_est_gms.columns = ["Estado GMS", "Cantidad"]
             fig_w3 = px.pie(
                 df_est_gms, values="Cantidad", names="Estado GMS", hole=0.5,
-                color_discrete_sequence=["#16a34a", "#22c55e", "#15803d"] # VERDE
+                color_discrete_sequence=["#16a34a", "#22c55e", "#15803d"]
             )
             fig_w3.update_layout(
                 height=180, margin=dict(l=5, r=5, t=10, b=10),
@@ -298,6 +308,8 @@ if user["rol"] == "ESPECIALISTA_ZONAL":
 
 if st.sidebar.button("CERRAR SESIÓN", key="btn_logout"):
     st.session_state.logged_in = False
+    st.session_state.user = None
+    st.query_params.clear()
     st.rerun()
 
 st.sidebar.markdown("---")
@@ -359,7 +371,7 @@ if user["rol"] == "ESPECIALISTA_ZONAL":
 
     st.markdown("---")
 
-# 1.1. GESTIÓN SEDE CENTRAL (SI ES SEDE CENTRAL) - MUESTRA HT, PROVINCIA Y MES
+# 1.1. GESTIÓN SEDE CENTRAL (SI ES SEDE CENTRAL)
 if user["rol"] == "SEDE_CENTRAL":
     st.markdown("### 🏛️ Gestión Sede Central: Validación y Actualización de Estados GMS")
     
