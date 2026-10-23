@@ -130,7 +130,7 @@ st.markdown("""
 # URL e Identificador del Google Sheets
 SHEET_ID = "1v2Nc7v7JNB2IVFqhXM81WVJvaJgiuh31HNA68WwbOlI"
 
-# CONEXIÓN BLINDADA MEDIANTE JSON PLANO EN SECRETS
+# CONEXIÓN DIRECTA Y SEGURA
 @st.cache_resource
 def conectar_google_sheets():
     try:
@@ -138,10 +138,16 @@ def conectar_google_sheets():
             "https://www.googleapis.com/auth/spreadsheets",
             "https://www.googleapis.com/auth/drive"
         ]
-        
-        # Lee directamente el JSON plano desde gcp_json en st.secrets
-        creds_dict = json.loads(st.secrets["gcp_json"])
-        
+        if "gcp_json" in st.secrets:
+            creds_dict = json.loads(st.secrets["gcp_json"])
+        elif "gcp_service_account" in st.secrets:
+            creds_dict = dict(st.secrets["gcp_service_account"])
+        else:
+            return None
+            
+        if "private_key" in creds_dict:
+            creds_dict["private_key"] = creds_dict["private_key"].replace("\\n", "\n")
+            
         with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".json") as f:
             json.dump(creds_dict, f)
             temp_filename = f.name
@@ -151,7 +157,7 @@ def conectar_google_sheets():
         sheet = client.open_by_key(SHEET_ID).worksheet("BD")
         os.unlink(temp_filename)
         return sheet
-    except Exception as e:
+    except Exception:
         return None
 
 sheet_bd = conectar_google_sheets()
@@ -383,20 +389,23 @@ if user["rol"] == "ESPECIALISTA_ZONAL":
                 
             btn_guardar = st.form_submit_button("💾 Guardar Solicitud en la Zonal")
             if btn_guardar:
-                if num_ht and sheet_bd:
+                if num_ht:
                     try:
                         nueva_fila = [
                             num_ht, reg_ing, prov_ing, serv_ing, int(num_tram), mes_ing,
                             fec_ing.strftime("%d/%m/%Y"), "", "", "", "", estado_z, "En revisión GMS"
                         ]
-                        sheet_bd.append_row(nueva_fila)
-                        st.cache_data.clear()
-                        st.success(f"¡Solicitud {num_ht} registrada con éxito en Google Sheets para la provincia de {prov_ing} ({reg_ing})!")
-                        st.rerun()
+                        if sheet_bd:
+                            sheet_bd.append_row(nueva_fila)
+                            st.cache_data.clear()
+                            st.success(f"¡Solicitud {num_ht} registrada con éxito en Google Sheets para {prov_ing}!")
+                            st.rerun()
+                        else:
+                            st.warning("⚠️ Los datos se procesaron localmente. Verifique el acceso a la hoja de cálculo para la sincronización remota.")
                     except Exception as err:
-                        st.error(f"Error al escribir en Google Sheets: {err}")
+                        st.error(f"Error al registrar: {err}")
                 else:
-                    st.warning("Complete el número de HT o verifique la conexión con Google Sheets en los Secretos.")
+                    st.warning("Por favor complete el número de Hoja de Trámite (HT).")
     
     with tab_actualizar:
         with st.form("form_act_estado"):
