@@ -130,7 +130,7 @@ st.markdown("""
 # URL e Identificador del Google Sheets
 SHEET_ID = "1v2Nc7v7JNB2IVFqhXM81WVJvaJgiuh31HNA68WwbOlI"
 
-# CONEXIÓN BLINDADA A GOOGLE SHEETS (SOPORTA SECCIÓN O JSON PLANO)
+# CONEXIÓN BLINDADA MEDIANTE JSON PLANO EN SECRETS
 @st.cache_resource
 def conectar_google_sheets():
     try:
@@ -138,29 +138,20 @@ def conectar_google_sheets():
             "https://www.googleapis.com/auth/spreadsheets",
             "https://www.googleapis.com/auth/drive"
         ]
-        creds_dict = None
-        if "gcp_service_account" in st.secrets:
-            creds_dict = dict(st.secrets["gcp_service_account"])
-        elif "gcp_json" in st.secrets:
-            creds_dict = json.loads(st.secrets["gcp_json"])
+        
+        # Lee directamente el JSON plano desde gcp_json en st.secrets
+        creds_dict = json.loads(st.secrets["gcp_json"])
+        
+        with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".json") as f:
+            json.dump(creds_dict, f)
+            temp_filename = f.name
             
-        if creds_dict:
-            if "private_key" in creds_dict:
-                pk = creds_dict["private_key"]
-                pk = pk.strip().replace("\\n", "\n").replace("\\\\n", "\n")
-                creds_dict["private_key"] = pk
-                
-            with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".json") as f:
-                json.dump(creds_dict, f)
-                temp_filename = f.name
-                
-            creds = Credentials.from_service_account_file(temp_filename, scopes=scope)
-            client = gspread.authorize(creds)
-            sheet = client.open_by_key(SHEET_ID).worksheet("BD")
-            os.unlink(temp_filename)
-            return sheet
-        return None
-    except Exception:
+        creds = Credentials.from_service_account_file(temp_filename, scopes=scope)
+        client = gspread.authorize(creds)
+        sheet = client.open_by_key(SHEET_ID).worksheet("BD")
+        os.unlink(temp_filename)
+        return sheet
+    except Exception as e:
         return None
 
 sheet_bd = conectar_google_sheets()
@@ -405,7 +396,7 @@ if user["rol"] == "ESPECIALISTA_ZONAL":
                     except Exception as err:
                         st.error(f"Error al escribir en Google Sheets: {err}")
                 else:
-                    st.warning("Para registrar registros, asegúrese de que las credenciales de Sede Central estén configuradas correctamente en los Secrets de Streamlit Cloud.")
+                    st.warning("Complete el número de HT o verifique la conexión con Google Sheets en los Secretos.")
     
     with tab_actualizar:
         with st.form("form_act_estado"):
