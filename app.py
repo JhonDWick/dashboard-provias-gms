@@ -100,7 +100,7 @@ st.markdown("""
         padding: 22px 18px;
         border-radius: 8px;
         text-align: center;
-        height: 185px;
+        height: 200px;
         display: flex;
         flex-direction: column;
         justify-content: flex-start;
@@ -135,7 +135,7 @@ def cargar_datos():
 
 df = cargar_datos()
 
-# Formatear columna Provincia y ordenar por fecha de ingreso reciente a antigua
+# Formatear columna Provincia y ordenar por fecha de ingreso reciente a antigua (Cronológico inverso)
 if not df.empty and "Provincia" in df.columns:
     df["Provincia_Formateada"] = df["Provincia"].astype(str).str.strip().str.title()
     if "Fecha_Ingreso_Zonal" in df.columns:
@@ -220,26 +220,43 @@ if not st.session_state.logged_in:
     st.write("Sistema informático orientado al seguimiento, control de estados y tramitación de recursos para el mantenimiento rutinario de caminos vecinales a nivel nacional.")
     st.markdown("<br>", unsafe_allow_html=True)
     
+    # Tarjetas de bienvenida interactivas con métricas en tiempo real
+    total_general = len(df) if not df.empty else 0
+    validadas_gms = len(df[df["Estado_GMS"].astype(str).str.lower() == "validado"]) if not df.empty else 0
+    
     col_w1, col_w2, col_w3 = st.columns(3)
     with col_w1:
         st.markdown("""
             <div class="welcome-card">
                 <h4>🛣️ Cobertura Zonal</h4>
-                <p>Supervisión descentralizada en las jurisdicciones viales de las regiones de <b>Tacna, Moquegua y Huancavelica</b>.</p>
+                <p>Supervisión descentralizada en <b>3 Regiones clave</b>:</p>
+                <ul style="text-align: left; font-size: 12px; color: #555; margin-top: 4px; padding-left: 15px;">
+                    <li>Huancavelica (6 Provincias)</li>
+                    <li>Tacna (4 Provincias)</li>
+                    <li>Moquegua (3 Provincias)</li>
+                </ul>
             </div>
         """, unsafe_allow_html=True)
     with col_w2:
-        st.markdown("""
+        st.markdown(f"""
             <div class="welcome-card">
                 <h4>📊 Trazabilidad en Línea</h4>
-                <p>Control automatizado de Hojas de Trámite (HT), opiniones favorables y validaciones centrales en tiempo real.</p>
+                <p>Estado global del repositorio en tiempo real:</p>
+                <div style="margin-top: 14px;">
+                    <span style="font-size: 24px; font-weight: bold; color: #dc2626;">{total_general}</span><br>
+                    <span style="font-size: 11px; color: #666; text-transform: uppercase;">Total Trámites Registrados</span>
+                </div>
             </div>
         """, unsafe_allow_html=True)
     with col_w3:
-        st.markdown("""
+        st.markdown(f"""
             <div class="welcome-card">
                 <h4>👥 Acceso por Roles</h4>
-                <p>Perfiles diferenciados y seguros para Especialistas de Unidades Zonales y Especialistas de Sede Central.</p>
+                <p>Control de flujo seguro y transparente:</p>
+                <div style="margin-top: 14px;">
+                    <span style="font-size: 24px; font-weight: bold; color: #dc2626;">{validadas_gms}</span><br>
+                    <span style="font-size: 11px; color: #666; text-transform: uppercase;">Trámites Validados GMS</span>
+                </div>
             </div>
         """, unsafe_allow_html=True)
 
@@ -299,7 +316,6 @@ if user["rol"] == "ESPECIALISTA_ZONAL":
             col_f1, col_f2, col_f3 = st.columns(3)
             with col_f1:
                 num_ht = st.text_input("Número de HT (ej. E-050000-2026)")
-                # RESTRICCIÓN DE REGIÓN SEGÚN EL USUARIO EXACTO
                 regiones_permitidas = user.get("regiones", sorted(list(df["Region"].dropna().unique())))
                 reg_ing = st.selectbox("Región", regiones_permitidas)
                 prov_ing = st.selectbox("Provincia Asignada", user["provincias"])
@@ -326,7 +342,7 @@ if user["rol"] == "ESPECIALISTA_ZONAL":
 
     st.markdown("---")
 
-# 1.1. GESTIÓN SEDE CENTRAL (SI ES SEDE CENTRAL)
+# 1.1. GESTIÓN SEDE CENTRAL (SI ES SEDE CENTRAL) - MUESTRA HT, PROVINCIA Y MES
 if user["rol"] == "SEDE_CENTRAL":
     st.markdown("### 🏛️ Gestión Sede Central: Validación y Actualización de Estados GMS")
     
