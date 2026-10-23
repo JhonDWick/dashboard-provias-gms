@@ -130,7 +130,7 @@ st.markdown("""
 # URL e Identificador del Google Sheets
 SHEET_ID = "1v2Nc7v7JNB2IVFqhXM81WVJvaJgiuh31HNA68WwbOlI"
 
-# CONEXIÓN BLINDADA CON RECONSTRUCCIÓN AUTOMÁTICA DEL FORMATO PEM
+# CONEXIÓN BLINDADA SIN ALTERAR PADDING BASE64
 @st.cache_resource
 def conectar_google_sheets():
     try:
@@ -144,23 +144,13 @@ def conectar_google_sheets():
         elif "gcp_service_account" in st.secrets:
             creds_dict = dict(st.secrets["gcp_service_account"])
         else:
+            st.error("❌ No se encontró la configuración de credenciales en st.secrets.")
             return None
             
-        # Reconstrucción quirúrgica y automática de la llave privada
+        # Reemplazo directo y seguro que respeta el formato PEM y su padding
         if "private_key" in creds_dict:
-            import re
             pk = creds_dict["private_key"]
-            # Extraer el contenido entre los encabezados PEM
-            match = re.search(r'-----BEGIN PRIVATE KEY-----(.*?)-----END PRIVATE KEY-----', pk, re.DOTALL)
-            if match:
-                key_body = match.group(1)
-                # Eliminar cualquier barra invertida (\), espacios o saltos de línea erróneos
-                key_body = re.sub(r'[\s\\]+', '', key_body)
-                # Reorganizar el código base64 limpio en líneas estándar de 64 caracteres
-                formatted_body = '\n'.join(key_body[i:i+64] for i in range(0, len(key_body), 64))
-                creds_dict["private_key"] = f"-----BEGIN PRIVATE KEY-----\n{formatted_body}\n-----END PRIVATE KEY-----\n"
-            else:
-                creds_dict["private_key"] = pk.replace("\\\\n", "\n").replace("\\n", "\n")
+            creds_dict["private_key"] = pk.replace("\\\\n", "\n").replace("\\n", "\n")
             
         with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".json") as f:
             json.dump(creds_dict, f)
