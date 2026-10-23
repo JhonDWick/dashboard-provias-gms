@@ -3,7 +3,6 @@ import pandas as pd
 import plotly.express as px
 from datetime import datetime, date
 import base64
-import json
 import gspread
 from google.oauth2.service_account import Credentials
 
@@ -128,7 +127,7 @@ st.markdown("""
 # URL e Identificador del Google Sheets
 SHEET_ID = "1v2Nc7v7JNB2IVFqhXM81WVJvaJgiuh31HNA68WwbOlI"
 
-# CONEXIÓN CON GSPREAD LEYENDO EL JSON DIRECTO DE LOS SECRETOS
+# CONEXIÓN CON GSPREAD VÍA STREAMLIT SECRETS (ESTÁNDAR NATIVO)
 @st.cache_resource
 def conectar_google_sheets():
     try:
@@ -137,10 +136,11 @@ def conectar_google_sheets():
             "https://www.googleapis.com/auth/drive"
         ]
         
-        # Parseamos el JSON completo almacenado en el secreto 'gcp_json'
-        creds_dict = json.loads(st.secrets["gcp_json"])
-        
-        creds = Credentials.from_service_account_info(creds_dict, scopes=scope)
+        credentials_dict = dict(st.secrets["gcp_service_account"])
+        if "private_key" in credentials_dict:
+            credentials_dict["private_key"] = credentials_dict["private_key"].replace("\\n", "\n")
+            
+        creds = Credentials.from_service_account_info(credentials_dict, scopes=scope)
         client = gspread.authorize(creds)
         sheet = client.open_by_key(SHEET_ID).worksheet("BD")
         return sheet
