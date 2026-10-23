@@ -3,6 +3,9 @@ import pandas as pd
 import plotly.express as px
 from datetime import datetime, date
 import base64
+import tempfile
+import os
+import json
 import gspread
 from google.oauth2.service_account import Credentials
 
@@ -131,10 +134,6 @@ SHEET_ID = "1v2Nc7v7JNB2IVFqhXM81WVJvaJgiuh31HNA68WwbOlI"
 @st.cache_resource
 def conectar_google_sheets():
     try:
-        import tempfile
-        import os
-        import json
-        
         scope = [
             "https://www.googleapis.com/auth/spreadsheets",
             "https://www.googleapis.com/auth/drive"
@@ -148,7 +147,7 @@ def conectar_google_sheets():
             pk = pk.replace("\\\\n", "\n").replace("\\n", "\n")
             credentials_dict["private_key"] = pk
             
-        # Creamos el archivo temporal con el JSON limpio
+        # Creamos un archivo JSON temporal seguro en el servidor de Streamlit
         with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".json") as f:
             json.dump(credentials_dict, f)
             temp_filename = f.name
