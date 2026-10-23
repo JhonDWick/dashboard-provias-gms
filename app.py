@@ -11,7 +11,7 @@ st.set_page_config(
     layout="wide"
 )
 
-# Estilos CSS Profesionales con la nueva Paleta Institucional Roja (Estilo MTC / Provías)
+# Estilos CSS Profesionales con la Paleta Institucional Roja (Estilo MTC / Provías)
 st.markdown("""
     <style>
     /* Fondo de infraestructura vial en la barra lateral con capa institucional roja */
@@ -159,14 +159,14 @@ img_transf_b64 = img_to_base64(["Consulta Transferencia.png", "consulta transfer
 
 # Usuarios y Asignación Exacta de Provincias
 USUARIOS = {
-    "central_gms": {"pass": "GmsCentral2026!", "nombre": "Especialista Sede Central", "rol": "SEDE_CENTRAL", "provincias": "TODAS"},
-    "jparra": {"pass": "Zonal2026!", "nombre": "José Parra Benavides", "rol": "ESPECIALISTA_ZONAL", "provincias": ["ACOBAMBA"]},
-    "evasquez": {"pass": "Zonal2026!", "nombre": "Edgar Vásquez Rivera", "rol": "ESPECIALISTA_ZONAL", "provincias": ["ANGARAES", "CHURCAMPA"]},
-    "jponce": {"pass": "Zonal2026!", "nombre": "Jhon Ponce Francia", "rol": "ESPECIALISTA_ZONAL", "provincias": ["CASTROVIRREYNA", "HUAYTARÁ"]},
-    "jcarhuaricra": {"pass": "Zonal2026!", "nombre": "Jaqueline Judith Carhuaricra Estrella", "rol": "ESPECIALISTA_ZONAL", "provincias": ["HUANCAVELICA"]},
-    "rleon": {"pass": "Zonal2026!", "nombre": "Randolf Arturo León Rojas", "rol": "ESPECIALISTA_ZONAL", "provincias": ["TAYACAJA"]},
-    "atorres": {"pass": "Zonal2026!", "nombre": "Alexa Torres Flores", "rol": "ESPECIALISTA_ZONAL", "provincias": ["TACNA", "CANDARAVE", "TARATA", "JORGE BASADRE"]},
-    "lortiz": {"pass": "Zonal2026!", "nombre": "Luis Eduardo Ortiz Fonttis", "rol": "ESPECIALISTA_ZONAL", "provincias": ["MARISCAL NIETO", "ILO", "GENERAL SANCHEZ CERRO"]}
+    "central_gms": {"pass": "GmsCentral2026!", "nombre": "Especialista Sede Central", "rol": "SEDE_CENTRAL", "provincias": "TODAS", "regiones": ["Huancavelica", "Moquegua", "Tacna"]},
+    "jparra": {"pass": "Zonal2026!", "nombre": "José Parra Benavides", "rol": "ESPECIALISTA_ZONAL", "provincias": ["ACOBAMBA"], "regiones": ["Huancavelica"]},
+    "evasquez": {"pass": "Zonal2026!", "nombre": "Edgar Vásquez Rivera", "rol": "ESPECIALISTA_ZONAL", "provincias": ["ANGARAES", "CHURCAMPA"], "regiones": ["Huancavelica"]},
+    "jponce": {"pass": "Zonal2026!", "nombre": "Jhon Ponce Francia", "rol": "ESPECIALISTA_ZONAL", "provincias": ["CASTROVIRREYNA", "HUAYTARÁ"], "regiones": ["Huancavelica"]},
+    "jcarhuaricra": {"pass": "Zonal2026!", "nombre": "Jaqueline Judith Carhuaricra Estrella", "rol": "ESPECIALISTA_ZONAL", "provincias": ["HUANCAVELICA"], "regiones": ["Huancavelica"]},
+    "rleon": {"pass": "Zonal2026!", "nombre": "Randolf Arturo León Rojas", "rol": "ESPECIALISTA_ZONAL", "provincias": ["TAYACAJA"], "regiones": ["Huancavelica"]},
+    "atorres": {"pass": "Zonal2026!", "nombre": "Alexa Torres Flores", "rol": "ESPECIALISTA_ZONAL", "provincias": ["TACNA", "CANDARAVE", "TARATA", "JORGE BASADRE"], "regiones": ["Tacna", "Moquegua"]},
+    "lortiz": {"pass": "Zonal2026!", "nombre": "Luis Eduardo Ortiz Fonttis", "rol": "ESPECIALISTA_ZONAL", "provincias": ["MARISCAL NIETO", "ILO", "GENERAL SANCHEZ CERRO"], "regiones": ["Tacna", "Moquegua"]}
 }
 
 if "logged_in" not in st.session_state:
@@ -299,7 +299,9 @@ if user["rol"] == "ESPECIALISTA_ZONAL":
             col_f1, col_f2, col_f3 = st.columns(3)
             with col_f1:
                 num_ht = st.text_input("Número de HT (ej. E-050000-2026)")
-                reg_ing = st.selectbox("Región", sorted(list(df["Region"].dropna().unique())))
+                # RESTRICCIÓN DE REGIÓN SEGÚN LA UNIDAD ZONAL DEL USUARIO
+                regiones_permitidas = user.get("regiones", sorted(list(df["Region"].dropna().unique())))
+                reg_ing = st.selectbox("Región", regiones_permitidas)
                 prov_ing = st.selectbox("Provincia Asignada", user["provincias"])
             with col_f2:
                 serv_ing = st.text_input("Servicio / Obra", "Mantenimiento Rutinario")
@@ -312,7 +314,7 @@ if user["rol"] == "ESPECIALISTA_ZONAL":
                 
             btn_guardar = st.form_submit_button("💾 Guardar Solicitud en la Zonal")
             if btn_guardar:
-                st.success(f"¡Solicitud {num_ht} registrada con éxito para la provincia de {prov_ing}!")
+                st.success(f"¡Solicitud {num_ht} registrada con éxito para la provincia de {prov_ing} ({reg_ing})!")
     
     with tab_actualizar:
         with st.form("form_act_estado"):
